@@ -1,5 +1,5 @@
 # ILoSA: Interactive Learning of Stiffness and Attractors
-Giovanni Franzese∗, Anna Mészáros, Luka Peternel, and Jens Kober
+Giovanni Franzese<sup>∗</sup>, Anna Mészáros, Luka Peternel, and Jens Kober
 
 **Presented** in 2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) in Prague, Czech Republic 
 
@@ -17,7 +17,7 @@ To install:
 - Build the project, calling: catkin_make -DMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/path/to/libfranka/build (be sure that libfranka is installed https://frankaemika.github.io/docs/installation_linux.html)
 
 To run ILoSA:
-- Switch on your Panda robot (make sure the gripper is initialized correctly), unlock its joints (and activate the FCI if necessary).
+- Switch on your Panda robot (make sure the gripper is initialized correctly), unlock its joints, and activate the FCI if necessary.
 - Open a terminal and be sure that the ros of the new catkin workspace is sourced, i.e. source devel/setup.bash
 - roslaunch franka_human_friendly_controllers cartesian_variable_impedance_controller.launch robot_ip:=ROBOT_IP load_gripper:=True
 - python3 main.py
