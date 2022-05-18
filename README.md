@@ -7,6 +7,18 @@ Giovanni Franzese<sup>∗</sup>, Anna Mészáros, Luka Peternel, and Jens Kober
 
 ## What is ILoSA? 
 
+Teaching robots how to apply forces according to our preferences is still an open challenge that has to be tackled from multiple engineering perspectives.
+ILoSA is a framework which enables robots to learn variable impedance policies where both the Cartesian stiffness and the attractor can be learned from human demonstrations and corrections with a user-friendly interface. These policies are learned with the help of Gaussian Processes (GPs), exploiting the properties of GPs to identify regions of uncertainty and allow for interactive corrections, stiffness modulation and active disturbance rejection.
+
+The learning process consists of two steps:
+1. Kinesthetic demonstration - in which the human leads the robot through the desired motion, and
+2. Correction phase - in which the human can locally adapt the initially demonstrated policy so as to improve performance during task execution.
+
+ILoSA has shown to be effective in different challenging tasks, such as pushing a box, board wiping, as well as plugging and unplugging a plug from a socket. Good task execution could be achieved with a single demonstration followed by a short period of corrections. The low time demand coupled with an intuitive correction interface further makes ILoSA accessible to people who may not be experts in robotics. 
+
+With this we invite you all to try ILoSA out for yourselves, to expand it to other tasks challenging not only for robots but maybe even humans as well and keep pushing the capabilities of robot learning further.
+
+
 # How to run the code on a Franka Emika Panda
 To install:
 - Create a workspace containing a src directory.
