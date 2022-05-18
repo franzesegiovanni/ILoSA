@@ -1,5 +1,10 @@
 # ILoSA
-Interactive Learning of Stiffness and Attractors, IROS 2021
+Interactive Learning of Stiffness and Attractors
+
+**Presented** in 2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) in Prague, Czech Republic 
+**Winner** of BEST LATE BREAKING RESULTS POSTER AWARD in 2021 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM 2021)
+
+## What is ILoSA? 
 
 # How to run the code on a Franka Emika Panda
 To install:
