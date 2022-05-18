@@ -1,6 +1,4 @@
-# ILoSA
-Interactive Learning of Stiffness and Attractors
-
+# ILoSA: Interactive Learning of Stiffness and Attractors
 Giovanni Franzese∗, Anna Mészáros, Luka Peternel, and Jens Kober
 
 **Presented** in 2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) in Prague, Czech Republic 
