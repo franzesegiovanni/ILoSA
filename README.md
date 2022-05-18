@@ -14,4 +14,4 @@ To run ILoSA:
 - Switch on your Panda robot (make sure the gripper is initialized correctly), unlock its joints (and activate the FCI if necessary).
 - Open a terminal and be sure that the ros of the new catkin workspace is sourced, i.e. source devel/setup.bash
 - roslaunch franka_human_friendly_controllers cartesian_variable_impedance_controller.launch robot_ip:=ROBOT_IP load_gripper:=True
--python3 main.py
+- python3 main.py
