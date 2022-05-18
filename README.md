@@ -5,6 +5,8 @@ Giovanni Franzese<sup>∗</sup>, Anna Mészáros, Luka Peternel, and Jens Kober
 
 **Winner** of BEST LATE BREAKING RESULTS POSTER AWARD in 2021 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM 2021)
 
+**Full paper** can be found for free at https://arxiv.org/abs/2103.03099
+
 ## What is ILoSA? 
 
 Teaching robots how to apply forces according to our preferences is still an open challenge that has to be tackled from multiple engineering perspectives.
@@ -33,3 +35,20 @@ To run ILoSA:
 - Open a terminal and be sure that the ros of the new catkin workspace is sourced, i.e. source devel/setup.bash
 - roslaunch franka_human_friendly_controllers cartesian_variable_impedance_controller.launch robot_ip:=ROBOT_IP load_gripper:=True
 - python3 main.py
+
+# Cite ILoSA
+If you found ILoSA useful for your research, please cite it as:
+
+```
+@inproceedings{franzese2021ilosa,
+  title={ILoSA: Interactive learning of stiffness and attractors},
+  author={Franzese, Giovanni and M{\'e}sz{\'a}ros, Anna and Peternel, Luka and Kober, Jens},
+  booktitle={2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  pages={7778--7785},
+  year={2021},
+  organization={IEEE}
+}
+```
+
+# Acknowledgements
+The research surrounding this code is funded by the European Research Council Starting Grant TERI “Teaching Robots Interactively”.
