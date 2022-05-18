@@ -16,7 +16,7 @@ The learning process consists of two steps:
 1. Kinesthetic demonstration - in which the human leads the robot through the desired motion, and
 2. Correction phase - in which the human can locally adapt the initially demonstrated policy so as to improve performance during task execution.
 
-ILoSA has shown to be effective in different challenging tasks, such as pushing a box, board wiping, as well as plugging and unplugging a plug from a socket. Good task execution could be achieved with a single demonstration followed by a short period of corrections. The low time demand coupled with an intuitive correction interface further makes ILoSA accessible to people who may not be experts in robotics. 
+ILoSA has shown to be effective in different challenging tasks, such as pushing a box, board wiping, as well as plugging and unplugging a plug from a socket. Good task execution could be achieved with a single demonstration followed by a short period of corrections. The low time demand coupled with an intuitive correction interface further makes ILoSA accessible to people who may not be experts in robotics. The following [video](https://www.youtube.com/watch?v=MAG-kFGztws) provides an overview of ILoSA's capabilities. 
 
 With this we invite you all to try ILoSA out for yourselves, to expand it to other tasks challenging not only for robots but maybe even humans as well and keep pushing the capabilities of robot learning further.
 
