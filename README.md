@@ -5,7 +5,7 @@ Giovanni Franzese<sup>∗</sup>, Anna Mészáros, Luka Peternel, and Jens Kober
 
 **Winner** of BEST LATE BREAKING RESULTS POSTER AWARD in 2021 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM 2021)
 
-**Full paper** can be found for free at https://arxiv.org/abs/2103.03099
+**Full paper** is publically available at https://arxiv.org/abs/2103.03099
 
 ## What is ILoSA? 
 
