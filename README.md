@@ -24,17 +24,18 @@ With this we invite you all to try ILoSA out for yourselves, to expand it to oth
 # How to run the code on a Franka Emika Panda
 To install:
 - Create a workspace containing a src directory.
-- Inside the src directory, clone the franka_ros repository by frankaemika. https://github.com/frankaemika/franka_ros
-- Inside the repository, clone the human friendly controllers of TU Delft https://github.com/franzesegiovanni/franka_human_friendly_controllers
+- Inside the src directory, clone the franka_ros repository by frankaemika.
+```git clone https://github.com/frankaemika/franka_ros ```
+- Inside the repository, clone the human friendly controllers of TU Delft https:```//github.com/franzesegiovanni/franka_human_friendly_controllers```
 - Return to the workspace main directory (cd ../..).
-- Source your version of ROS (e.g. source /opt/ros/melodic/setup.bash).
-- Build the project, calling: catkin_make -DMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/path/to/libfranka/build (be sure that libfranka is installed https://frankaemika.github.io/docs/installation_linux.html)
+- Source your version of ROS (e.g. ```source /opt/ros/melodic/setup.bash```).
+- Build the project, calling: ```catkin_make -DMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/path/to/libfranka/build``` (be sure that libfranka is installed https://frankaemika.github.io/docs/installation_linux.html)
 
 To run ILoSA:
 - Switch on your Panda robot (make sure the gripper is initialized correctly), unlock its joints, and activate the FCI if necessary.
-- Open a terminal and be sure that the ros of the new catkin workspace is sourced, i.e. source devel/setup.bash
-- roslaunch franka_human_friendly_controllers cartesian_variable_impedance_controller.launch robot_ip:=ROBOT_IP load_gripper:=True
-- python3 main.py
+- Open a terminal and be sure that the ros of the new catkin workspace is sourced, i.e. ```source devel/setup.bash```
+- ```roslaunch franka_human_friendly_controllers cartesian_variable_impedance_controller.launch robot_ip:=ROBOT_IP load_gripper:=True```
+- ``` python3 main.py```
 
 # Cite ILoSA
 If you found ILoSA useful for your research, please cite it as:
