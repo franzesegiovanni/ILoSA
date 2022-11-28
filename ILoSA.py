@@ -51,6 +51,13 @@ class ILoSA(Panda):
 
         self.NullSpaceControl=None
 
+
+    def goal_pose_callback(self, data):
+        self.goal_pos = [data.pose.position.x, data.pose.position.y, data.pose.position.z]
+        self.goal_ori = [data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]
+
+        rospy.Subscriber("/goal_pose", PoseStamped, self.goal_pose_callback)
+
     def Record_NullSpace(self):
         self.Kinesthetic_Demonstration()
         print('Recording ended.')
@@ -60,8 +67,8 @@ class ILoSA(Panda):
             if len(self.nullspace_traj)==0:
                 self.nullspace_traj=np.zeros((3,1))
                 self.nullspace_joints=np.zeros((7,1))
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
+                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj - self.goal_pos ), axis=1)
+                self.nullspace_joints=np.concatenate((self.nullspace_joints, self.recorded_joint ), axis=1)
                 self.nullspace_traj=np.delete(self.nullspace_traj, 0,1)
                 self.nullspace_joints=np.delete(self.nullspace_joints,0,1)
             else:
@@ -82,7 +89,8 @@ class ILoSA(Panda):
                 self.training_traj=np.zeros((3,1))
                 self.training_delta=np.zeros((3,1))
                 self.training_dK=np.zeros((3,1))
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=1)
+ 
+                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj - self.goal_pos), axis=1)
                 self.training_delta=np.concatenate((self.training_delta,resample(self.recorded_traj, step=2)), axis=1)
                 self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=1)
                 self.training_traj=np.delete(self.training_traj, 0,1)
@@ -196,7 +204,7 @@ class ILoSA(Panda):
         while not self.end:
             # read the actual position of the robot
 
-            cart_pos=np.array(self.cart_pos).reshape(1,-1)
+            cart_pos=np.array(self.cart_pos- self.goal_pos).reshape(1,-1) # find the cartesian pose relative to the goal 
             # GP predictions Delta_x
             [self.delta, self.sigma]=self.Delta.predict(cart_pos)
 
@@ -232,9 +240,9 @@ class ILoSA(Panda):
             self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
             if self.sigma / self.Stiffness.max_var > self.theta_stiffness: 
                 self.K_tot=self.K_tot*self.scaling_factor
-            x_new = cart_pos[0][0] + self.delta[0]  
-            y_new = cart_pos[0][1] + self.delta[1]  
-            z_new = cart_pos[0][2] + self.delta[2]  
+            x_new = cart_pos[0][0] + self.delta[0]  + self.goal_pos[0]
+            y_new = cart_pos[0][1] + self.delta[1]  + self.goal_pos[1]
+            z_new = cart_pos[0][2] + self.delta[2]  + self.goal_pos[2]
 
             quat_goal=[1,0,0,0]
 
@@ -244,7 +252,7 @@ class ILoSA(Panda):
             null_stiff = [0]
 
             if self.NullSpaceControl:
-                [self.equilibrium_configuration, self.sigma_null_space]=self.NullSpaceControl.predict(np.array(pos_goal).reshape(1,-1))
+                [self.equilibrium_configuration, self.sigma_null_space]=self.NullSpaceControl.predict(cart_pos)
                 self.scaling_factor_ns = (1-self.sigma_null_space / self.NullSpaceControl.max_var) / (1 - self.theta_nullspace)
                 
                 if self.sigma_null_space / self.NullSpaceControl.max_var > self.theta_nullspace:
