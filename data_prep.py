@@ -13,16 +13,17 @@ import scipy
 from std_msgs.msg import Float32MultiArray
 from scipy.spatial.transform import Rotation
 import pathlib
-
+from data_prep import quaternion_divide, slerp_sat, quaternion_product
 
 # Resample and save movement data from demonstration
 # step: number of timesteps between elements used for computing the attractor distance; can be adjusted for regulating the velocity
-def resample(recorded_traj, step):
-    resampled_delta = np.subtract(recorded_traj[:, step:], recorded_traj[:, :-step])
+def resample(recorded_traj, recorded_ori, step):
+    resampled_delta = np.subtract(recorded_traj[step:, :], recorded_traj[:-step, :])
+    resampled_quat_diff = np.quaternion_divide(recorded_ori[step:, :], recorded_ori[:-step, :])
     for i in range(step):
-        resampled_delta = np.concatenate((resampled_delta, (np.subtract(recorded_traj[:, -1], recorded_traj[:, -step+i])).reshape(3,1)),axis=1)
-
-    return resampled_delta
+        resampled_delta = np.concatenate((resampled_delta, (np.subtract(recorded_traj[-1,:], recorded_traj[-step+i, :])).reshape(1,3)),axis=0)
+        resampled_quat_diff= np.concatenate((resampled_quat_diff, np.quaternion_divide(recorded_ori[-1, :], recorded_ori[-step+i, :]).reshape(1,4)),axis=0)
+    return resampled_delta, resampled_quat_diff
 
 
 # Extract gripper width

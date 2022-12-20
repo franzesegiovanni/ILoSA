@@ -51,10 +51,10 @@ class InteractiveGP():
     def var_gradient(self, x):
         lscale=self.length_scales
         k_star = self.kernel_(self.X, x).reshape(-1, 1)
-        dKdx = -2* k_star * (self.X[:, 0].reshape(-1, 1) - x[0][0]) / (lscale[0] ** 2) 
-        dKdy = -2* k_star * (self.X[:, 1].reshape(-1, 1) - x[0][1]) / (lscale[1] ** 2)
-        dKdz = -2* k_star * (self.X[:, 2].reshape(-1, 1) - x[0][2]) / (lscale[2] ** 2)
-        a = 2 * np.matmul(np.transpose(k_star), self.K_inv)
+        dKdx = 2* k_star * (self.X[:, 0].reshape(-1, 1) - x[0][0]) / (lscale[0] ** 2) 
+        dKdy = 2* k_star * (self.X[:, 1].reshape(-1, 1) - x[0][1]) / (lscale[1] ** 2)
+        dKdz = 2* k_star * (self.X[:, 2].reshape(-1, 1) - x[0][2]) / (lscale[2] ** 2)
+        a = - 2 * np.matmul(np.transpose(k_star), self.K_inv)
         dSigma_dx_ = np.matmul(a, np.reshape(dKdx, [len(a[0]), 1]))
         dSigma_dy_ = np.matmul(a, np.reshape(dKdy, [len(a[0]), 1]))
         dSigma_dz_ = np.matmul(a, np.reshape(dKdz, [len(a[0]), 1]))

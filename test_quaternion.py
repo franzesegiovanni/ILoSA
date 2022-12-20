@@ -29,3 +29,17 @@ print("Check that my function does divisions between quaternion correctly. This 
 print("Package says:",q1/q2)
 
 print("My function says:", quaternion_divide(np.array([1,0,0,0]).reshape(1,4),np.array([0.5,0.5,0,0]).reshape(1,4)))
+
+#%% Let's fit a Dynamical System 
+import os
+import matplotlib.pyplot as plt
+os.getcwd()
+test=np.load(os.getcwd()+'/data/data.npz')
+data=np.transpose(test['recorded_ori'])
+data=data[::10,:]
+plt.plot(data)
+Q_diff=quaternion_divide(data[1:,:],data[0:-1,:])
+Q_prod=quaternion_product(Q_diff,data[0:-1,:])
+plt.plot(Q_prod,'o')
+# plt.legend(['w','x', 'y', 'z'])
+plt.show()

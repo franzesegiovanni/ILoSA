@@ -58,15 +58,15 @@ class ILoSA(Panda):
 
         if save_demo.lower()=='y':
             if len(self.nullspace_traj)==0:
-                self.nullspace_traj=np.zeros((3,1))
-                self.nullspace_joints=np.zeros((7,1))
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
-                self.nullspace_traj=np.delete(self.nullspace_traj, 0,1)
-                self.nullspace_joints=np.delete(self.nullspace_joints,0,1)
+                self.nullspace_traj=np.zeros((1,3))
+                self.nullspace_joints=np.zeros((1,7))
+                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=0)
+                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=0)
+                self.nullspace_traj=np.delete(self.nullspace_traj, 0, axis=0)
+                self.nullspace_joints=np.delete(self.nullspace_joints, 0, axis=0)
             else:
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
+                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=0)
+                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=0)
 
             print("Demo Saved")
         else:
@@ -79,20 +79,30 @@ class ILoSA(Panda):
         save_demo = input("Do you want to keep this demonstration? [y/n] \n")
         if save_demo.lower()=='y':
             if len(self.training_traj)==0:
-                self.training_traj=np.zeros((3,1))
-                self.training_delta=np.zeros((3,1))
-                self.training_dK=np.zeros((3,1))
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=1)
-                self.training_delta=np.concatenate((self.training_delta,resample(self.recorded_traj, step=2)), axis=1)
-                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=1)
-                self.training_traj=np.delete(self.training_traj, 0,1)
-                self.training_delta=np.delete(self.training_delta,0,1)
-                self.training_dK=np.delete(self.training_dK,0,1)
+                self.training_traj=np.zeros((1,3))
+                self.training_delta=np.zeros((1,3))
+                self.training_dK=np.zeros((1,3))
+                self.training_delta_quat=np.zeros((1,4))
+                
+                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
+                [delta_x, delta_quat]=resample(self.recorded_traj,self.training_delta_quat, step=2)
+                self.training_delta=np.concatenate((self.training_delta,), axis=0)
+                self.training_delta_quat=np.concatenate((self.training_delta_quat,delta_quat), axis=0)
+
+                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
+                
+                
+                self.training_traj=np.delete(self.training_traj, 0,axis=0)
+                self.training_delta=np.delete(self.training_delta,0,axis=0)
+                self.training_dK=np.delete(self.training_dK,0,axis=0)
+                self.training_delta_quat=np.delete(self.training_delta, 0, axis=0)
 
             else:
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=1)
-                self.training_delta=np.concatenate((self.training_delta,resample(self.recorded_traj, step=2)), axis=1)
-                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=1)
+                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
+                [delta_x, delta_quat]=resample(self.recorded_traj, self.recorded_ori, step=2)
+                self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
+                self.training_delta_quat=np.concatenate((self.training_delta_quat,delta_quat), axis=0)
+                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
             print("Demo Saved")
         else:
             print("Demo Discarded")
