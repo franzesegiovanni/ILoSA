@@ -12,6 +12,7 @@ from panda import *
 from utils import *
 from data_prep import *
 import pickle
+from kernel import Matern_SO3
 # class for storing different data types into one variable
 class Struct:
     pass
@@ -82,13 +83,13 @@ class ILoSA(Panda):
                 self.training_traj=np.zeros((1,3))
                 self.training_delta=np.zeros((1,3))
                 self.training_dK=np.zeros((1,3))
-                self.training_delta_quat=np.zeros((1,4))
+                self.training_delta_ori=np.zeros((1,4))
                 self.training_ori=np.zeros((1,4))
                 
                 self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
-                [delta_x, delta_quat]=resample(self.recorded_traj,self.recorded_ori, step=2)
+                [delta_x, delta_ori]=resample(self.recorded_traj,self.recorded_ori, step=2)
                 self.training_delta=np.concatenate((self.training_delta,), axis=0)
-                self.training_delta_quat=np.concatenate((self.training_delta_quat,delta_quat), axis=0)
+                self.training_delta_ori=np.concatenate((self.training_delta_ori,delta_ori), axis=0)
 
                 self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
                 
@@ -96,13 +97,13 @@ class ILoSA(Panda):
                 self.training_traj=np.delete(self.training_traj, 0,axis=0)
                 self.training_delta=np.delete(self.training_delta,0,axis=0)
                 self.training_dK=np.delete(self.training_dK,0,axis=0)
-                self.training_delta_quat=np.delete(self.training_delta, 0, axis=0)
+                self.training_delta_ori=np.delete(self.training_delta, 0, axis=0)
 
             else:
                 self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
-                [delta_x, delta_quat]=resample(self.recorded_traj, self.recorded_ori, step=2)
+                [delta_x, delta_ori]=resample(self.recorded_traj, self.recorded_ori, step=2)
                 self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
-                self.training_delta_quat=np.concatenate((self.training_delta_quat,delta_quat), axis=0)
+                self.training_delta_ori=np.concatenate((self.training_delta_ori,delta_ori), axis=0)
                 self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
             print("Demo Saved")
         else:
@@ -113,7 +114,7 @@ class ILoSA(Panda):
         self.training_delta = []
         self.training_dK = []
         self.training_ori=[]
-        self.training_delta_quat=[]
+        self.training_delta_ori=[]
 
     def save(self, data='last'):
         np.savez(str(pathlib.Path().resolve())+'/data/'+str(data)+'.npz', 
@@ -138,18 +139,18 @@ class ILoSA(Panda):
         self.training_dK=self.training_dK
 
     def Train_GPs(self):
-        if len(self.training_traj)>0 and len(self.training_delta)>0:
+        if len(self.training_traj)>0 and len(self.training_delta)>0 and len(self.training_ori) > 0 and len(self.training_delta_ori) >0:
             print("Training of Delta")
-            kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.1]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
-            self.Delta=InteractiveGP(X=self.training_traj, Y=self.training_delta, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
+            kernel = C(constant_value = 0.01)* Matern_SO3(nu=1.5) + WhiteKernel(0.00025, [0.0001, 0.0005])   
+            self.Delta=InteractiveGP_SO3(X=self.training_traj, Y=self.training_delta, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
             self.Delta.fit()
             with open('models/delta.pkl','wb') as delta:
                 pickle.dump(self.Delta,delta)
 
         else:
             raise TypeError("There are no data for learning a trajectory dynamical system")
-        with open('models/delta.pkl','wb') as delta:
-            pickle.dump(self.Delta,delta)
+        # with open('models/delta.pkl','wb') as delta:
+        #     pickle.dump(self.Delta,delta)
 
         if len(self.training_traj)>0 and len(self.training_dK)>0:
             print("Training of Stiffness")
@@ -196,7 +197,7 @@ class ILoSA(Panda):
     def find_alpha(self):
         alpha=np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
-            pos= self.Delta.X[i,:]+self.Delta.length_scales 
+            pos= self.Delta.X[i,:]+self.Delta.length_scales[:3] 
             dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(pos.reshape(1,-1))                                                                                                                                                                
             alpha[i]=self.max_grad_force/ np.sqrt(dSigma_dx**2+dSigma_dy**2+dSigma_dz**2)
             self.alpha=np.min(alpha)
@@ -209,25 +210,27 @@ class ILoSA(Panda):
         while not self.end:
             # read the actual position of the robot
 
-            cart_pos=np.array(self.cart_pos).reshape(1,-1)
-            # GP predictions Delta_x
-            [self.delta, self.sigma]=self.Delta.predict(cart_pos)
+            # cart_pos=np.array(self.cart_pos).reshape(1,-1)
 
+            # GP predictions Delta_x
+            x=np.hstack(self.cart_pos,self.cart)
+            [self.mu, self.sigma]=self.Delta.predict(x)
+
+            self.delta=self.mu[0,:3]
+            self.delta_ori=self.mu[0,3:]
             # GP prediction K stiffness
-            [self.dK, _]=self.Stiffness.predict(cart_pos, return_std=False)
+            [self.dK, _]=self.Stiffness.predict(self.cart_pos, return_std=False)
   
-            self.delta = np.clip(self.delta[0], -self.attractor_lim, self.attractor_lim)
+            self.delta = np.clip(self.delta, -self.attractor_lim, self.attractor_lim)
 
             self.dK = np.clip(self.dK[0], self.dK_min, self.dK_max)
 
-            dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(cart_pos)
+            dSigma_dx, dSigma_dy, dSigma_dz, dSigma_dqw_, dSigma_dqx_, dSigma_dqy_, dSigma_dqz_ = self.Delta.var_gradient(x)
             
-            f_stable=-self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
-
             self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
 
             
-            if any(np.array(self.feedback) > 0.05): # this avoids to activate the feedback on noise joystick
+            if any(np.abs(np.array(self.feedback)) > 0.05): # this avoids to activate the feedback on noise joystick
 
                 print("Received Feedback")
                 delta_inc, dK_inc = Interpret_3D(feedback=self.feedback, delta=self.delta, K=self.K_tot, delta_lim=self.attractor_lim, K_mean=self.K_mean)
@@ -236,23 +239,28 @@ class ILoSA(Panda):
                 print("dK_inc")
                 print(dK_inc)
                 is_uncertain=self.Delta.is_uncertain(theta=self.theta)
-                self.Delta.update_with_k(x=cart_pos, mu=self.delta, epsilon_mu=delta_inc, is_uncertain=is_uncertain)
-                self.Stiffness.update_with_k(x=cart_pos, mu=self.dK, epsilon_mu=dK_inc, is_uncertain=is_uncertain)
+                self.Delta.update_with_k(x=self.cart_pos, mu=self.delta, epsilon_mu=delta_inc, is_uncertain=is_uncertain)
+                self.Stiffness.update_with_k(x=self.cart_pos, mu=self.dK, epsilon_mu=dK_inc, is_uncertain=is_uncertain)
         
-            
+            f_stable=-self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
             self.delta, self.K_tot = Force2Impedance(self.delta, self.K_tot, f_stable, self.attractor_lim)
             self.K_tot=[self.K_tot]
             self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
             if self.sigma / self.Stiffness.max_var > self.theta_stiffness: 
                 self.K_tot=self.K_tot*self.scaling_factor
-            x_new = cart_pos[0][0] + self.delta[0]  
-            y_new = cart_pos[0][1] + self.delta[1]  
-            z_new = cart_pos[0][2] + self.delta[2]  
+            x_new = self.cart_pos[0][0] + self.delta[0]  
+            y_new = self.cart_pos[0][1] + self.delta[1]  
+            z_new = self.cart_pos[0][2] + self.delta[2]  
 
-            quat_goal=[1,0,0,0]
+            delta_quat_stable=np.array([dSigma_dqw_, dSigma_dqx_, dSigma_dqy_, dSigma_dqz_])
+
+            quat_goal=quaternion_product(self.delta_ori,self.cart_ori)
+            quat_goal_stable=quaternion_product(delta_quat_stable,quat_goal)
+            quat_goal_stable_sat= slerp_sat(quat_goal,quat_goal_stable, self.sigma / self.Delta.max_var)
+
 
             pos_goal=[x_new, y_new, z_new]
-            self.set_attractor(pos_goal,quat_goal)
+            self.set_attractor(pos_goal,quat_goal_stable_sat)
 
             null_stiff = [0]
 
