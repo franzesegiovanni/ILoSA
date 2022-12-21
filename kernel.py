@@ -148,13 +148,14 @@ class Matern_SO3(RBF):
         if Y is None:
             X_quat=X[:,3:]
             X_lin=X[:,0:3]
-            inner = 1 - pdist(X_quat, metric="cosine")
-            X_quat[inner<0]=-X_quat[inner<0]
-            inner = 1- pdist(X_quat, metric="cosine")
-            theta= np.arccos(2* inner** 2 -1) #this may be redundant
-            dist_quat=theta/self.length_scale[3]
+            # inner = 1 - pdist(X_quat, metric="cosine")
+            # X_quat[inner<0]=-X_quat[inner<0]
+            # inner = 1- pdist(X_quat, metric="cosine")
+            # theta= np.arccos(2* inner** 2 -1) 
+            # dist_quat=theta/self.length_scale[3]
+            dist_quat= pdist(X_quat, metric="cosine")/self.length_scale[3]
             dist_lin = pdist(X_lin/length_scale[:3], metric="euclidean")
-            dists=dist_quat+dist_lin
+            dists=math.sqrt(dist_quat**2+dist_lin**2)
 
         else:
             if eval_gradient:
@@ -163,14 +164,16 @@ class Matern_SO3(RBF):
             Y_lin=Y[:,:3]
             X_quat=X[:,3:] 
             X_quat=X[:,:3] 
-            inner = 1- cdist(X_quat,Y_quat, metric="cosine")
-            mask=inner<0
-            X_quat[mask[0]][:]=-X_quat[mask[0]][:]
-            inner = 1- cdist(X_quat, Y_quat, metric="cosine")
-            theta= np.arccos(2* inner** 2 -1)
-            dist_quat=theta/self.length_scale[3]    
+            # inner = 1- cdist(X_quat,Y_quat, metric="cosine")
+            # mask=inner<0
+            # X_quat[mask[0]][:]=-X_quat[mask[0]][:]
+            # inner = 1- cdist(X_quat, Y_quat, metric="cosine")
+            # theta= np.arccos(2* inner** 2 -1)
+            # dist_quat=theta/self.length_scale[3]
+            dist_quat= cdist(X_quat, Y_quat, metric="cosine")/self.length_scale[3]    
             dist_lin = cdist(X_lin/length_scale[:3], Y_lin/length_scale[:3], metric="euclidean")
-            dists=dist_quat+dist_lin
+            dists=math.sqrt(dist_quat**2+dist_lin**2)
+            # dists=dist_quat+dist_lin
         if self.nu == 0.5:
             K = np.exp(-dists)
         elif self.nu == 1.5:

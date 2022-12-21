@@ -37,8 +37,8 @@ class Panda():
             self.end = True
 
     def ee_pose_callback(self, data):
-        self.cart_pos = [data.pose.position.x, data.pose.position.y, data.pose.position.z]
-        self.cart_ori = [data.pose.orientation.w, data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z]
+        self.cart_pos = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+        self.cart_ori = np.array([data.pose.orientation.w, data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z])
 
     # joint angle subscriber
     def joint_callback(self, data):
@@ -47,12 +47,12 @@ class Panda():
 
     # gripper state subscriber
     def gripper_callback(self, data):
-        self.gripper_pos = data.position[7:9]
+        self.gripper_pos = np.array(data.position[7:9])
 
 
     # spacemouse joystick subscriber
     def teleop_callback(self, data):
-        self.feedback = [data.x, data.y, data.z]
+        self.feedback = np.array([data.x, data.y, data.z])
 
 
     # spacemouse buttons subscriber

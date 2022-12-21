@@ -9,16 +9,18 @@ import numpy as np
 import scipy
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel as C
+from scipy.spatial.distance import cdist
 
-
-class InteractiveGP():
+class InteractiveGP_SO3():
+    """ This function only work when we are working on SO3 since it computes the gradient of the variance considering the kernel to be 
+    Matern_SO3, defined in this repository"""
     def __init__(self, X, Y, kernel, y_lim, alpha=1e-10, n_restarts_optimizer=20):
         self.y_lim=y_lim
-        self.X=np.transpose(X)
-        print("Shape X for gaussian Process")
+        self.X=X
+        self.Y=Y
+        print("Shape X for Gaussian Process")
         print(np.shape(self.X))
-        self.Y=np.transpose(Y)
-        print("Shape Y for gaussian Process")
+        print("Shape Y for Gaussian Process")
         print(np.shape(self.Y))
         self.gp = GaussianProcessRegressor(kernel=kernel, alpha=alpha, n_restarts_optimizer=n_restarts_optimizer)
 
@@ -51,15 +53,28 @@ class InteractiveGP():
     def var_gradient(self, x):
         lscale=self.length_scales
         k_star = self.kernel_(self.X, x).reshape(-1, 1)
-        dKdx = 2* k_star * (self.X[:, 0].reshape(-1, 1) - x[0][0]) / (lscale[0] ** 2) 
-        dKdy = 2* k_star * (self.X[:, 1].reshape(-1, 1) - x[0][1]) / (lscale[1] ** 2)
-        dKdz = 2* k_star * (self.X[:, 2].reshape(-1, 1) - x[0][2]) / (lscale[2] ** 2)
-        a = - 2 * np.matmul(np.transpose(k_star), self.K_inv)
-        dSigma_dx_ = np.matmul(a, np.reshape(dKdx, [len(a[0]), 1]))
-        dSigma_dy_ = np.matmul(a, np.reshape(dKdy, [len(a[0]), 1]))
-        dSigma_dz_ = np.matmul(a, np.reshape(dKdz, [len(a[0]), 1]))
+        dKdx = k_star * (self.X[:, 0].reshape(-1, 1) - x[0][0]) / (lscale[0] ** 2) 
+        dKdy = k_star * (self.X[:, 1].reshape(-1, 1) - x[0][1]) / (lscale[1] ** 2)
+        dKdz = k_star * (self.X[:, 2].reshape(-1, 1) - x[0][2]) / (lscale[2] ** 2)
 
-        return float(dSigma_dx_), float(dSigma_dy_), float(dSigma_dz_)
+        #quaternion
+        cos_dist=cdist(self.X[:, 3:], x[0,3:], metric="cosine") #1-<u,v>/(||u||.||v||)
+        #d(cos_dist)/du= cos_dist*(-v/(|u||v|))
+        dKdqw = k_star * ((self.X[:, 3]) * cos_dist).reshape(-1, 1)/ (lscale[3] ** 2)
+        dKdqx = k_star * ((self.X[:, 4]) * cos_dist).reshape(-1, 1)/ (lscale[3] ** 2) 
+        dKdqy = k_star * ((self.X[:, 5]) * cos_dist).reshape(-1, 1)/ (lscale[3] ** 2)
+        dKdqz = k_star * ((self.X[:, 6]) * cos_dist).reshape(-1, 1)/ (lscale[3] ** 2)
+
+        a = - 2 * np.matmul(np.transpose(k_star), self.K_inv)
+        dSigma_dx_ =  np.matmul(a,  dKdx.reshape(-1,1))
+        dSigma_dy_ =  np.matmul(a,  dKdy.reshape(-1,1))
+        dSigma_dz_ =  np.matmul(a,  dKdz.reshape(-1,1))
+        dSigma_dqw_ = np.matmul(a, dKdqw.reshape(-1,1))
+        dSigma_dqx_ = np.matmul(a, dKdqx.reshape(-1,1))
+        dSigma_dqy_ = np.matmul(a, dKdqy.reshape(-1,1))
+        dSigma_dqz_ = np.matmul(a, dKdqz.reshape(-1,1))
+
+        return float(dSigma_dx_), float(dSigma_dy_), float(dSigma_dz_), float(dSigma_dqw_),  float(dSigma_dqx_), float(dSigma_dqy_), float(dSigma_dqz_)
 
 
     def update_K_inv(self,x):

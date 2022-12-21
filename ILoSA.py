@@ -83,9 +83,10 @@ class ILoSA(Panda):
                 self.training_delta=np.zeros((1,3))
                 self.training_dK=np.zeros((1,3))
                 self.training_delta_quat=np.zeros((1,4))
+                self.training_ori=np.zeros((1,4))
                 
                 self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
-                [delta_x, delta_quat]=resample(self.recorded_traj,self.training_delta_quat, step=2)
+                [delta_x, delta_quat]=resample(self.recorded_traj,self.recorded_ori, step=2)
                 self.training_delta=np.concatenate((self.training_delta,), axis=0)
                 self.training_delta_quat=np.concatenate((self.training_delta_quat,delta_quat), axis=0)
 
@@ -111,6 +112,8 @@ class ILoSA(Panda):
         self.training_traj = []
         self.training_delta = []
         self.training_dK = []
+        self.training_ori=[]
+        self.training_delta_quat=[]
 
     def save(self, data='last'):
         np.savez(str(pathlib.Path().resolve())+'/data/'+str(data)+'.npz', 
