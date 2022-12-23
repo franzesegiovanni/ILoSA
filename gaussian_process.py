@@ -14,10 +14,10 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel as
 class InteractiveGP():
     def __init__(self, X, Y, kernel, y_lim, alpha=1e-10, n_restarts_optimizer=20):
         self.y_lim=y_lim
-        self.X=np.transpose(X)
+        self.X=X
         print("Shape X for gaussian Process")
         print(np.shape(self.X))
-        self.Y=np.transpose(Y)
+        self.Y=Y
         print("Shape Y for gaussian Process")
         print(np.shape(self.Y))
         self.gp = GaussianProcessRegressor(kernel=kernel, alpha=alpha, n_restarts_optimizer=n_restarts_optimizer)

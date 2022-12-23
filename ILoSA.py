@@ -60,8 +60,8 @@ class ILoSA(Panda):
             if len(self.nullspace_traj)==0:
                 self.nullspace_traj=np.zeros((3,1))
                 self.nullspace_joints=np.zeros((7,1))
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
+                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj.transpose() ), axis=1)
+                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint.transpose() ), axis=1)
                 self.nullspace_traj=np.delete(self.nullspace_traj, 0,1)
                 self.nullspace_joints=np.delete(self.nullspace_joints,0,1)
             else:
@@ -84,9 +84,13 @@ class ILoSA(Panda):
                 self.training_dK=np.zeros((1,3))
                 self.training_ori=np.zeros((1,4))
                 
+                self.recorded_traj=self.recorded_traj.transpose()
+                self.recorded_ori=self.recorded_ori.transpose()
+                self.recorded_joint=self.recorded_joint.transpose()
+
                 self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
-                self.training_ori=np.concatenate((self.training_ori,self.recorded_ori ), axis=0)
-                [delta_x]=resample(self.recorded_traj, step=2)
+                self.training_ori=np.concatenate((self.training_ori,self.recorded_ori), axis=0)
+                delta_x=resample(self.recorded_traj, step=2)
                 self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
 
                 self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
@@ -215,7 +219,7 @@ class ILoSA(Panda):
             [self.delta, self.sigma, index_max_k_star]=self.Delta.predict(cart_pos)
 
             # GP prediction K stiffness
-            [self.dK, _]=self.Stiffness.predict(cart_pos, return_std=False)
+            [self.dK, _, _]=self.Stiffness.predict(cart_pos, return_std=False)
   
             self.delta = np.clip(self.delta[0], -self.attractor_lim, self.attractor_lim)
 

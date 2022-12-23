@@ -10,6 +10,7 @@ import math
 import numpy as np
 import time
 import pandas as pd
+import quaternion
 from sensor_msgs.msg import JointState, Joy
 from geometry_msgs.msg import Point, WrenchStamped, PoseStamped, Vector3
 from std_msgs.msg import Float32MultiArray
@@ -62,7 +63,7 @@ class Panda():
 
     def connect_ROS(self):
         rospy.init_node('ILoSA', anonymous=True)
-        r=rospy.Rate(self.control_freq)
+        self.r=rospy.Rate(self.control_freq)
 
         rospy.Subscriber("/cartesian_pose", PoseStamped, self.ee_pose_callback)
         rospy.Subscriber("/spacenav/offset", Vector3, self.teleop_callback)
@@ -104,8 +105,8 @@ class Panda():
 
     def go_to_pose(self, goal_pose):
         # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()
-        start = self.curr_pos
-        start_ori=self.curr_ori
+        start = self.cart_pos
+        start_ori=self.cart_ori
         goal_=np.array([goal_pose.pose.position.x, goal_pose.pose.position.y, goal_pose.pose.position.z])
         # interpolate from start to goal with attractor distance of approx 1 mm
         squared_dist = np.sum(np.subtract(start, goal_)**2, axis=0)
@@ -198,7 +199,7 @@ class Panda():
         print("Recording started. Press e to stop.")
 
         self.recorded_traj = self.cart_pos
-        self.recroded_ori  = self.cart_ori
+        self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
         while not self.end:
 
@@ -206,6 +207,7 @@ class Panda():
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             r.sleep()
+        
             
 
     def Passive(self):

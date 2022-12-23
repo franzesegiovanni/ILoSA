@@ -18,9 +18,9 @@ import pathlib
 # Resample and save movement data from demonstration
 # step: number of timesteps between elements used for computing the attractor distance; can be adjusted for regulating the velocity
 def resample(recorded_traj, step):
-    resampled_delta = np.subtract(recorded_traj[:, step:], recorded_traj[:, :-step])
+    resampled_delta = np.subtract(recorded_traj[step:, :], recorded_traj[:-step,:])
     for i in range(step):
-        resampled_delta = np.concatenate((resampled_delta, (np.subtract(recorded_traj[:, -1], recorded_traj[:, -step+i])).reshape(3,1)),axis=1)
+        resampled_delta = np.concatenate((resampled_delta, (np.subtract(recorded_traj[ -1, :].reshape(1,3), recorded_traj[ -step+i,:].reshape(1,3)))),axis=0)
 
     return resampled_delta
 
