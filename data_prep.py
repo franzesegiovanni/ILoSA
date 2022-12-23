@@ -13,7 +13,7 @@ import scipy
 from std_msgs.msg import Float32MultiArray
 from scipy.spatial.transform import Rotation
 import pathlib
-from data_prep import quaternion_divide, slerp_sat, quaternion_product
+# from data_prep import quaternion_divide, slerp_sat, quaternion_product
 
 # Resample and save movement data from demonstration
 # step: number of timesteps between elements used for computing the attractor distance; can be adjusted for regulating the velocity
@@ -77,10 +77,10 @@ def quaternion_product(q1, q2):
     Be careful (!) q=[w,x,y,z] """
     q1=q1/np.sqrt(np.sum(q1**2, axis=1)).reshape(-1,1)
     q2=q2/np.sqrt(np.sum(q2**2, axis=1)).reshape(-1,1)
-    mask=np.diag(np.inner(q1,q2))<0
-    q2[mask,:]=-q2[mask,:]
-    q2norm = np.sqrt(q2[:,0]**2 + q2[:,1]**2 + q2[:,2]**2 + q2[:,3]**2)
-    q2=q2/q2norm.reshape(-1,1)
+    # mask=np.diag(np.inner(q1,q2))<0
+    # q2[mask,:]=-q2[mask,:]
+    # q2norm = np.sqrt(q2[:,0]**2 + q2[:,1]**2 + q2[:,2]**2 + q2[:,3]**2)
+    # q2=q2/q2norm.reshape(-1,1)
     a = (q1[:,0]*q2[:,0]  - q1[:,1]*q2[:,1] - q1[:,2]*q2[:,2] - q1[:,3]*q2[:,3])
     b = (q1[:,0]*q2[:,1]  + q1[:,1]*q2[:,0] + q1[:,2]*q2[:,3] - q1[:,3]*q2[:,2])
     c = (q1[:,0]*q2[:,2]  - q1[:,1]*q2[:,3] + q1[:,2]*q2[:,0] + q1[:,3]*q2[:,1])
@@ -105,8 +105,8 @@ def slerp_sat(q1, q2, theta_max_perc):
     q1=q1/np.sqrt(np.sum(q1**2))
     q2=q2/np.sqrt(np.sum(q2**2))
     inner=np.inner(q1,q2)
-    if inner<0:
-        q2=-q2
+    # if inner<0:
+    #     q2=-q2
     theta= np.arccos(np.abs(inner)) 
     q_slerp=np.copy(q2)
     # print("Theta",theta)

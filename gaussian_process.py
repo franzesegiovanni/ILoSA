@@ -186,20 +186,28 @@ class InteractiveGP_SO3():
         cos_dist=cdist(self.X[:, 3:], x[0,3:], metric="cosine") #1-<u,v>/(||u||.||v||)
         
         #d(cos_dist)/du= cos_dist*(-v/(|u||v|))
-        dKdqw = k_star * ((self.X[:, 3]) * cos_dist)/ (lscale[3] ** 2)
-        dKdqx = k_star * ((self.X[:, 4]) * cos_dist)/ (lscale[3] ** 2) 
-        dKdqy = k_star * ((self.X[:, 5]) * cos_dist)/ (lscale[3] ** 2)
-        dKdqz = k_star * ((self.X[:, 6]) * cos_dist)/ (lscale[3] ** 2)
+        # dKdqw = k_star * ((self.X[:, 3]) * cos_dist)/ (lscale[3] ** 2)
+        # dKdqx = k_star * ((self.X[:, 4]) * cos_dist)/ (lscale[3] ** 2) 
+        # dKdqy = k_star * ((self.X[:, 5]) * cos_dist)/ (lscale[3] ** 2)
+        # dKdqz = k_star * ((self.X[:, 6]) * cos_dist)/ (lscale[3] ** 2)
+
+        #Alternative version, we select the closest element in the database
+        _, arg_min=np.min(cos_dist)
+        dSigma_dqw_ = self.X[arg_min, 3]
+        dSigma_dqx_ = self.X[arg_min, 4] 
+        dSigma_dqy_ = self.X[arg_min, 5]
+        dSigma_dqz_ = self.X[arg_min, 6]
+        
 
         a = - 2 * np.matmul(np.transpose(k_star), self.K_inv)
 
         dSigma_dx_ =  np.matmul(a,  dKdx.reshape(-1,1))
         dSigma_dy_ =  np.matmul(a,  dKdy.reshape(-1,1))
         dSigma_dz_ =  np.matmul(a,  dKdz.reshape(-1,1))
-        dSigma_dqw_ = np.matmul(a, dKdqw.reshape(-1,1))
-        dSigma_dqx_ = np.matmul(a, dKdqx.reshape(-1,1))
-        dSigma_dqy_ = np.matmul(a, dKdqy.reshape(-1,1))
-        dSigma_dqz_ = np.matmul(a, dKdqz.reshape(-1,1))
+        # dSigma_dqw_ = np.matmul(a, dKdqw.reshape(-1,1))
+        # dSigma_dqx_ = np.matmul(a, dKdqx.reshape(-1,1))
+        # dSigma_dqy_ = np.matmul(a, dKdqy.reshape(-1,1))
+        # dSigma_dqz_ = np.matmul(a, dKdqz.reshape(-1,1))
 
         return float(dSigma_dx_), float(dSigma_dy_), float(dSigma_dz_), float(dSigma_dqw_),  float(dSigma_dqx_), float(dSigma_dqy_), float(dSigma_dqz_)
 

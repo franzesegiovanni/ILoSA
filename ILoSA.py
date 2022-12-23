@@ -194,6 +194,8 @@ class ILoSA(Panda):
                 self.NullSpace = pickle.load(nullspace)
         except:
             print("No NullSpace model saved")
+
+
     def find_alpha(self):
         alpha=np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
@@ -213,11 +215,13 @@ class ILoSA(Panda):
             # cart_pos=np.array(self.cart_pos).reshape(1,-1)
 
             # GP predictions Delta_x
-            x=np.hstack(self.cart_pos,self.cart)
+            x=np.hstack(self.cart_pos,self.cart_ori)
             [self.mu, self.sigma]=self.Delta.predict(x)
 
             self.delta=self.mu[0,:3]
             self.delta_ori=self.mu[0,3:]
+            # we need to respect the constraint of module equal to 1 
+            self.delta_ori[0]=np.sign(self.delta_ori[0])*(1-np.sqrt(self.delta_ori[1]**2+self.delta_ori[2]**2+self.delta_ori[3]**2))
             # GP prediction K stiffness
             [self.dK, _]=self.Stiffness.predict(self.cart_pos, return_std=False)
   
@@ -247,7 +251,9 @@ class ILoSA(Panda):
             self.K_tot=[self.K_tot]
             self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
             if self.sigma / self.Stiffness.max_var > self.theta_stiffness: 
-                self.K_tot=self.K_tot*self.scaling_factor
+                self.K_tot=  self.K_tot*self.scaling_factor
+                self.K_ori_= self.K_ori*self.scaling_factor
+
             x_new = self.cart_pos[0][0] + self.delta[0]  
             y_new = self.cart_pos[0][1] + self.delta[1]  
             z_new = self.cart_pos[0][2] + self.delta[2]  
@@ -255,8 +261,10 @@ class ILoSA(Panda):
             delta_quat_stable=np.array([dSigma_dqw_, dSigma_dqx_, dSigma_dqy_, dSigma_dqz_])
 
             quat_goal=quaternion_product(self.delta_ori,self.cart_ori)
-            quat_goal_stable=quaternion_product(delta_quat_stable,quat_goal)
-            quat_goal_stable_sat= slerp_sat(quat_goal,quat_goal_stable, self.sigma / self.Delta.max_var)
+
+            # quat_goal_stable=quaternion_product(delta_quat_stable,quat_goal)
+            
+            quat_goal_stable_sat= slerp_sat(quat_goal,delta_quat_stable, self.sigma / self.Delta.max_var)
 
 
             pos_goal=[x_new, y_new, z_new]

@@ -36,10 +36,13 @@ import matplotlib.pyplot as plt
 os.getcwd()
 test=np.load(os.getcwd()+'/data/data.npz')
 data=np.transpose(test['recorded_ori'])
-data=data[::10,:]
-plt.plot(data)
+data=data[::5,:]
+plt.plot(data[1:])
 Q_diff=quaternion_divide(data[1:,:],data[0:-1,:])
 Q_prod=quaternion_product(Q_diff,data[0:-1,:])
 plt.plot(Q_prod,'o')
-# plt.legend(['w','x', 'y', 'z'])
+plt.legend(['w','x', 'y', 'z', 'w','x', 'y', 'z'])
+plt.figure()
+plt.plot(Q_diff, 'o')
+plt.legend(['w','x', 'y', 'z'])
 plt.show()
