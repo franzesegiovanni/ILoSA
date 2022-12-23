@@ -46,7 +46,7 @@ class InteractiveGP():
         self.sigma=None
         if return_std==True:
             self.sigma = np.subtract(self.kernel_(x, x)+ self.noise_var_, np.matmul(k_star_K_inv_, k_star))
-        return self.mu, self.sigma 
+        return self.mu, self.sigma, np.argmax(k_star)
 
     def var_gradient(self, x):
         lscale=self.length_scales

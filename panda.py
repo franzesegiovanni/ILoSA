@@ -37,8 +37,8 @@ class Panda():
             self.end = True
 
     def ee_pose_callback(self, data):
-        self.cart_pos = [data.pose.position.x, data.pose.position.y, data.pose.position.z]
-        self.cart_ori = [data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]
+        self.cart_pos = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
+        self.cart_ori = np.array([data.pose.orientation.w, data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z])
 
     # joint angle subscriber
     def joint_callback(self, data):
@@ -47,12 +47,12 @@ class Panda():
 
     # gripper state subscriber
     def gripper_callback(self, data):
-        self.gripper_pos = data.position[7:9]
+        self.gripper_pos = np.array(data.position[7:9])
 
 
     # spacemouse joystick subscriber
     def teleop_callback(self, data):
-        self.feedback = [data.x, data.y, data.z]
+        self.feedback = np.array([data.x, data.y, data.z])
 
 
     # spacemouse buttons subscriber
@@ -88,10 +88,11 @@ class Panda():
         goal.pose.position.y = pos[1]
         goal.pose.position.z = pos[2]
 
-        goal.pose.orientation.x = quat[0]
-        goal.pose.orientation.y = quat[1]
-        goal.pose.orientation.z = quat[2]
-        goal.pose.orientation.w = quat[3]
+        goal.pose.orientation.w = quat[0]
+        goal.pose.orientation.x = quat[1]
+        goal.pose.orientation.y = quat[2]
+        goal.pose.orientation.z = quat[3]
+        
 
         self.goal_pub.publish(goal)
 
@@ -101,36 +102,88 @@ class Panda():
         self.configuration_pub.publish(joint_des)
 
 
-        
-    def go_to_3d(self,goal_):
-        start = self.cart_pos
-        r=rospy.Rate(self.control_freq)
+    def go_to_pose(self, goal_pose):
+        # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()
+        start = self.curr_pos
+        start_ori=self.curr_ori
+        goal_=np.array([goal_pose.pose.position.x, goal_pose.pose.position.y, goal_pose.pose.position.z])
         # interpolate from start to goal with attractor distance of approx 1 mm
         squared_dist = np.sum(np.subtract(start, goal_)**2, axis=0)
         dist = np.sqrt(squared_dist)
+        print("dist", dist)
         interp_dist = 0.001  # [m]
-        step_num = math.floor(dist / interp_dist)
+        step_num_lin = math.floor(dist / interp_dist)
 
-        x = np.linspace(start[0], goal_[0], step_num)
-        y = np.linspace(start[1], goal_[1], step_num)
-        z = np.linspace(start[2], goal_[2], step_num)
         
-        position=[x[0],y[0],z[0]]
-        orientation=[1,0,0,0]
-        self.set_attractor(position, orientation)
+        print("num of steps linear", step_num_lin)
+        
+        
+        q_start=np.quaternion(start_ori[0], start_ori[1], start_ori[2], start_ori[3])
+        print("q_start", q_start)
+        q_goal=np.quaternion(goal_pose.pose.orientation.w, goal_pose.pose.orientation.x, goal_pose.pose.orientation.y, goal_pose.pose.orientation.z)
+        inner_prod=q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
+        if inner_prod < 0:
+            q_start.x=-q_start.x
+            q_start.y=-q_start.y
+            q_start.z=-q_start.z
+            q_start.w=-q_start.w
+        inner_prod=q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
+        theta= np.arccos(np.abs(inner_prod))
+        print(theta)
+        interp_dist_polar = 0.001 
+        step_num_polar = math.floor(theta / interp_dist_polar)
+
+        
+        print("num of steps polar", step_num_polar)
+        
+        step_num=np.max([step_num_polar,step_num_lin])
+        
+        print("num of steps max", step_num)
+        x = np.linspace(start[0], goal_pose.pose.position.x, step_num)
+        y = np.linspace(start[1], goal_pose.pose.position.y, step_num)
+        z = np.linspace(start[2], goal_pose.pose.position.z, step_num)
+        
+        goal = PoseStamped()
+        
+        goal.pose.position.x = x[0]
+        goal.pose.position.y = y[0]
+        goal.pose.position.z = z[0]
+        
+        
+        quat=np.slerp_vectorized(q_start, q_goal, 0.0)
+        goal.pose.orientation.x = quat.x
+        goal.pose.orientation.y = quat.y
+        goal.pose.orientation.z = quat.z
+        goal.pose.orientation.w = quat.w
+
+        self.goal_pub.publish(goal)
 
         pos_stiff=[self.K_cart, self.K_cart, self.K_cart]
         rot_stiff=[self.K_ori, self.K_ori, self.K_ori]
         null_stiff=[0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+        self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
 
-        # send attractors to controller
+        goal = PoseStamped()
         for i in range(step_num):
-            position=[x[i],y[i],z[i]]
-            orientation=[1,0,0,0]
-            self.set_attractor(position,orientation)
-            r.sleep()
+            now = time.time()         
+            goal.header.seq = 1
+            goal.header.stamp = rospy.Time.now()
+            goal.header.frame_id = "map"
 
+            goal.pose.position.x = x[i]
+            goal.pose.position.y = y[i]
+            goal.pose.position.z = z[i]
+            quat=np.slerp_vectorized(q_start, q_goal, i/step_num)
+            #print("quat", quat) 
+            goal.pose.orientation.x = quat.x
+            goal.pose.orientation.y = quat.y
+            goal.pose.orientation.z = quat.z
+            goal.pose.orientation.w = quat.w
+            self.goal_pub.publish(goal)
+            self.r.sleep()   
+
+        
     def Kinesthetic_Demonstration(self, trigger=0.005): 
         r=rospy.Rate(self.rec_freq)
         self.Passive()
@@ -145,16 +198,18 @@ class Panda():
         print("Recording started. Press e to stop.")
 
         self.recorded_traj = self.cart_pos
+        self.recroded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
         while not self.end:
 
             self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
+            self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             r.sleep()
             
 
     def Passive(self):
         pos_stiff=[0.0,0.0,0.0]
-        rot_stiff=[self.K_ori , self.K_ori , self.K_ori ] 
+        rot_stiff=[0.0 , 0.0, 0.0] 
         null_stiff=[0.0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)

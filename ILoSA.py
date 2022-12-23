@@ -79,26 +79,37 @@ class ILoSA(Panda):
         save_demo = input("Do you want to keep this demonstration? [y/n] \n")
         if save_demo.lower()=='y':
             if len(self.training_traj)==0:
-                self.training_traj=np.zeros((3,1))
-                self.training_delta=np.zeros((3,1))
-                self.training_dK=np.zeros((3,1))
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=1)
-                self.training_delta=np.concatenate((self.training_delta,resample(self.recorded_traj, step=2)), axis=1)
-                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=1)
-                self.training_traj=np.delete(self.training_traj, 0,1)
-                self.training_delta=np.delete(self.training_delta,0,1)
-                self.training_dK=np.delete(self.training_dK,0,1)
+                self.training_traj=np.zeros((1,3))
+                self.training_delta=np.zeros((1,3))
+                self.training_dK=np.zeros((1,3))
+                self.training_ori=np.zeros((1,4))
+                
+                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
+                self.training_ori=np.concatenate((self.training_ori,self.recorded_ori ), axis=0)
+                [delta_x]=resample(self.recorded_traj, step=2)
+                self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
+
+                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
+                
+                
+                self.training_traj=np.delete(self.training_traj, 0,axis=0)
+                self.training_ori=np.delete(self.training_ori, 0,axis=0)
+                self.training_delta=np.delete(self.training_delta,0,axis=0)
+                self.training_dK=np.delete(self.training_dK,0,axis=0)
 
             else:
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=1)
-                self.training_delta=np.concatenate((self.training_delta,resample(self.recorded_traj, step=2)), axis=1)
-                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=1)
+                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
+                self.training_ori=np.concatenate((self.training_ori,self.recorded_ori), axis=0)
+                delta_x=resample(self.recorded_traj, step=2)
+                self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
+                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
             print("Demo Saved")
         else:
             print("Demo Discarded")
 
     def Clear_Training_Data(self):
         self.training_traj = []
+        self.training_ori  = []
         self.training_delta = []
         self.training_dK = []
 
@@ -107,6 +118,7 @@ class ILoSA(Panda):
         nullspace_traj=self.nullspace_traj, 
         nullspace_joints=self.nullspace_joints, 
         training_traj=self.training_traj,
+        training_ori = self.training_ori,
         training_delta=self.training_delta,
         training_dK=self.training_dK) 
 
@@ -116,11 +128,13 @@ class ILoSA(Panda):
         self.nullspace_traj=data['nullspace_traj'], 
         self.nullspace_joints=data['nullspace_joints'], 
         self.training_traj=data['training_traj'],
+        self.training_ori=data['training_ori']
         self.training_delta=data['training_delta'],
         self.training_dK=data['training_dK'] 
         self.nullspace_traj=self.nullspace_traj[0]
         self.nullspace_joints=  self.nullspace_joints[0]
         self.training_traj=self.training_traj[0]
+        self.training_ori=self.training_ori[0]
         self.training_delta=self.training_delta[0]
         self.training_dK=self.training_dK
 
@@ -198,7 +212,7 @@ class ILoSA(Panda):
 
             cart_pos=np.array(self.cart_pos).reshape(1,-1)
             # GP predictions Delta_x
-            [self.delta, self.sigma]=self.Delta.predict(cart_pos)
+            [self.delta, self.sigma, index_max_k_star]=self.Delta.predict(cart_pos)
 
             # GP prediction K stiffness
             [self.dK, _]=self.Stiffness.predict(cart_pos, return_std=False)
@@ -236,7 +250,9 @@ class ILoSA(Panda):
             y_new = cart_pos[0][1] + self.delta[1]  
             z_new = cart_pos[0][2] + self.delta[2]  
 
-            quat_goal=[1,0,0,0]
+            quat_goal=self.training_ori[index_max_k_star,:]
+            
+            quat_goal=slerp_sat(self.cart_ori, quat_goal, 0.2)
 
             pos_goal=[x_new, y_new, z_new]
             self.set_attractor(pos_goal,quat_goal)
