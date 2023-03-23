@@ -47,7 +47,7 @@ class ILoSA(Panda):
         self.nullspace_joints=[]
         
         # maximum force of the gradient
-        self.max_grad_force = 10
+        self.max_grad_force = 20
 
         self.NullSpaceControl=None
 
@@ -163,7 +163,7 @@ class ILoSA(Panda):
     def Train_GPs(self):
         if len(self.training_traj)>0 and len(self.training_delta)>0:
             print("Training of Delta")
-            kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.1]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
+            kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.2]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
             self.Delta=InteractiveGP(X=self.training_traj, Y=self.training_delta, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
             self.Delta.fit()
             with open('models/delta.pkl','wb') as delta:
