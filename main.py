@@ -13,6 +13,7 @@ if __name__ == '__main__':
     ILoSA=ILoSA()
     ILoSA.connect_ROS()
     time.sleep(5)
+    ILoSA.home_gripper()
 #%% 
     print("Recording of Nullspace contraints")
     ILoSA.Record_NullSpace()
@@ -24,6 +25,7 @@ if __name__ == '__main__':
     time.sleep(1)
     print("Record of the cartesian trajectory")
     ILoSA.Record_Demonstration()     
+
 #%%
     time.sleep(1)
     print("Save the data") 
@@ -40,7 +42,7 @@ if __name__ == '__main__':
     time.sleep(1)
     print("Reset to the starting cartesian position")
     start = PoseStamped()
-
+    ILoSA.home_gripper()
     start.pose.position.x = ILoSA.recorded_traj[0,0]
     start.pose.position.y = ILoSA.recorded_traj[0,1]
     start.pose.position.z = ILoSA.recorded_traj[0,2]
@@ -49,8 +51,23 @@ if __name__ == '__main__':
     start.pose.orientation.x = ILoSA.recorded_ori[0,1] 
     start.pose.orientation.y = ILoSA.recorded_ori[0,2] 
     start.pose.orientation.z = ILoSA.recorded_ori[0,3] 
+    ILoSA.move_gripper(ILoSA.recorded_gripper[0,0])
     ILoSA.go_to_pose(start)
+#%%
+    time.sleep(1)
+    print("Reset to the starting cartesian position")
+    start = PoseStamped()
+    ILoSA.home_gripper()
 
+    start.pose.position.x = ILoSA.training_traj[0,0]
+    start.pose.position.y = ILoSA.training_traj[0,1]
+    start.pose.position.z = ILoSA.training_traj[0,2]
+    
+    start.pose.orientation.w = ILoSA.training_ori[0,0] 
+    start.pose.orientation.x = ILoSA.training_ori[0,1] 
+    start.pose.orientation.y = ILoSA.training_ori[0,2] 
+    start.pose.orientation.z = ILoSA.training_ori[0,3] 
+    ILoSA.go_to_pose(start)
 #%% 
     time.sleep(1)
     print("Interactive Control Starting")

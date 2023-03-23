@@ -83,13 +83,17 @@ class ILoSA(Panda):
                 self.training_delta=np.zeros((1,3))
                 self.training_dK=np.zeros((1,3))
                 self.training_ori=np.zeros((1,4))
+                self.training_gripper=np.zeros((1,1))
                 
                 self.recorded_traj=self.recorded_traj.transpose()
                 self.recorded_ori=self.recorded_ori.transpose()
                 self.recorded_joint=self.recorded_joint.transpose()
+                self.recorded_gripper=self.recorded_gripper.transpose()
 
                 self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
                 self.training_ori=np.concatenate((self.training_ori,self.recorded_ori), axis=0)
+                self.training_gripper=np.concatenate((self.training_gripper,self.recorded_gripper), axis=0)
+
                 delta_x=resample(self.recorded_traj, step=2)
                 self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
 
@@ -100,10 +104,18 @@ class ILoSA(Panda):
                 self.training_ori=np.delete(self.training_ori, 0,axis=0)
                 self.training_delta=np.delete(self.training_delta,0,axis=0)
                 self.training_dK=np.delete(self.training_dK,0,axis=0)
+                self.training_gripper=np.delete(self.training_gripper,0, axis=0)
 
             else:
+                self.recorded_traj=self.recorded_traj.transpose()
+                self.recorded_ori=self.recorded_ori.transpose()
+                self.recorded_joint=self.recorded_joint.transpose()
+                self.recorded_gripper=self.recorded_gripper.transpose()
+                
                 self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
                 self.training_ori=np.concatenate((self.training_ori,self.recorded_ori), axis=0)
+                self.training_gripper=np.concatenate((self.training_gripper,self.recorded_gripper), axis=0)
+
                 delta_x=resample(self.recorded_traj, step=2)
                 self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
                 self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
@@ -124,22 +136,28 @@ class ILoSA(Panda):
         training_traj=self.training_traj,
         training_ori = self.training_ori,
         training_delta=self.training_delta,
-        training_dK=self.training_dK) 
+        training_gripper=self.training_gripper,
+        training_dK=self.training_dK)
+        print(np.shape(self.training_ori))
+        print(np.shape(self.training_traj))  
 
     def load(self, file='last'):
         data =np.load(str(pathlib.Path().resolve())+'/data/'+str(file)+'.npz')
 
-        self.nullspace_traj=data['nullspace_traj'], 
-        self.nullspace_joints=data['nullspace_joints'], 
-        self.training_traj=data['training_traj'],
+        self.nullspace_traj=data['nullspace_traj']
+        self.nullspace_joints=data['nullspace_joints']
+        self.training_traj=data['training_traj']
         self.training_ori=data['training_ori']
-        self.training_delta=data['training_delta'],
-        self.training_dK=data['training_dK'] 
-        self.nullspace_traj=self.nullspace_traj[0]
-        self.nullspace_joints=  self.nullspace_joints[0]
-        self.training_traj=self.training_traj[0]
-        self.training_ori=self.training_ori[0]
-        self.training_delta=self.training_delta[0]
+        self.training_delta=data['training_delta']
+        self.training_dK=data['training_dK']
+        self.training_gripper=data['training_gripper'] 
+        self.nullspace_traj=self.nullspace_traj
+        self.nullspace_joints=  self.nullspace_joints
+        self.training_traj=self.training_traj
+        # print(np.shape(self.training_traj))
+        self.training_ori=self.training_ori
+        # print(np.shape(self.training_ori))
+        self.training_delta=self.training_delta
         self.training_dK=self.training_dK
 
     def Train_GPs(self):
@@ -247,20 +265,24 @@ class ILoSA(Panda):
             
             self.delta, self.K_tot = Force2Impedance(self.delta, self.K_tot, f_stable, self.attractor_lim)
             self.K_tot=[self.K_tot]
+            K_ori_scaling=self.K_ori
             self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
-            if self.sigma / self.Stiffness.max_var > self.theta_stiffness: 
+            if self.sigma / self.Delta.max_var > self.theta_stiffness: 
                 self.K_tot=self.K_tot*self.scaling_factor
+                K_ori_scaling= self.K_ori*self.scaling_factor
             x_new = cart_pos[0][0] + self.delta[0]  
             y_new = cart_pos[0][1] + self.delta[1]  
             z_new = cart_pos[0][2] + self.delta[2]  
 
             quat_goal=self.training_ori[index_max_k_star,:]
-            
-            quat_goal=slerp_sat(self.cart_ori, quat_goal, 0.2)
+            gripper_goal=self.training_gripper[index_max_k_star,0]
+
+            quat_goal=slerp_sat(self.cart_ori, quat_goal, 0.1)
 
             pos_goal=[x_new, y_new, z_new]
             self.set_attractor(pos_goal,quat_goal)
-
+            self.move_gripper(gripper_goal)
+            #self.grasp_gripper(gripper_goal)
             null_stiff = [0]
 
             if self.NullSpaceControl:
@@ -275,7 +297,7 @@ class ILoSA(Panda):
                 null_stiff = [self.null_stiff]
             
             pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
-            rot_stiff = [self.K_ori, self.K_ori, self.K_ori]
+            rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]#[self.K_ori, self.K_ori, self.K_ori]
             self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
             if verboose :
                 print("Delta")

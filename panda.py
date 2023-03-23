@@ -13,6 +13,7 @@ import pandas as pd
 import quaternion
 from sensor_msgs.msg import JointState, Joy
 from geometry_msgs.msg import Point, WrenchStamped, PoseStamped, Vector3
+from franka_gripper.msg import GraspActionGoal, HomingActionGoal, StopActionGoal, MoveActionGoal
 from std_msgs.msg import Float32MultiArray
 from sys import exit
 
@@ -27,7 +28,18 @@ class Panda():
 
         self.start = True
         self.end = False
-
+        
+        self.move_command=MoveActionGoal()
+        self.grasp_command = GraspActionGoal()
+        self.home_command = HomingActionGoal()
+        self.stop_command = StopActionGoal()
+        self.gripper_width = 0
+        self.move_command.goal.speed=1
+        self.grasp_command.goal.epsilon.inner = 0.1
+        self.grasp_command.goal.epsilon.outer = 0.1
+        self.grasp_command.goal.speed = 0.1
+        self.grasp_command.goal.force = 5
+        self.grasp_command.goal.width = 1
         # Start keyboard listener
         self.listener = Listener(on_press=self._on_press)
         self.listener.start()
@@ -48,7 +60,7 @@ class Panda():
 
     # gripper state subscriber
     def gripper_callback(self, data):
-        self.gripper_pos = np.array(data.position[7:9])
+        self.gripper_pos = data.position[7]+data.position[8]
 
 
     # spacemouse joystick subscriber
@@ -60,6 +72,25 @@ class Panda():
     def btns_callback(self, data):
         self.left_btn = data.buttons[0]
         self.right_btn = data.buttons[1]
+
+    def move_gripper(self,width):
+        self.move_command.goal.width=width
+        self.move_pub.publish(self.move_command)
+
+    def grasp_gripper(self, width):
+        if width < 0.07 and self.grasp_command.goal.width != 0:
+            self.grasp_command.goal.width = 0
+            self.grasp_pub.publish(self.grasp_command)
+
+        elif width > 0.07 and self.grasp_command.goal.width != 1:
+            self.grasp_command.goal.width = 1
+            self.grasp_pub.publish(self.grasp_command)
+
+    def home_gripper(self):
+        self.homing_pub.publish(self.home_command)
+
+    def stop_gripper(self):
+        self.stop_pub.publish(self.stop_command)    
 
     def connect_ROS(self):
         rospy.init_node('ILoSA', anonymous=True)
@@ -74,7 +105,15 @@ class Panda():
         self.goal_pub  = rospy.Publisher('/equilibrium_pose', PoseStamped, queue_size=0)
         self.stiff_pub = rospy.Publisher('/stiffness', Float32MultiArray, queue_size=0)
         self.configuration_pub = rospy.Publisher("/equilibrium_configuration",Float32MultiArray, queue_size=0)
-
+        self.grasp_pub = rospy.Publisher("/franka_gripper/grasp/goal", GraspActionGoal,
+                                           queue_size=0)
+        self.move_pub = rospy.Publisher("/franka_gripper/move/goal", MoveActionGoal,
+                                           queue_size=0)
+        self.homing_pub = rospy.Publisher("/franka_gripper/homing/goal", HomingActionGoal,
+                                          queue_size=0)
+        self.stop_pub = rospy.Publisher("/franka_gripper/stop/goal", StopActionGoal,
+                                          queue_size=0)
+        
     def set_stiffness(self,pos_stiff,rot_stiff,null_stiff):
         stiff_des = Float32MultiArray()
         stiff_des.data = np.array([pos_stiff[0], pos_stiff[1], pos_stiff[2], rot_stiff[0], rot_stiff[1], rot_stiff[2], null_stiff[0]]).astype(np.float32)
@@ -201,11 +240,14 @@ class Panda():
         self.recorded_traj = self.cart_pos
         self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
+        self.recorded_gripper= self.gripper_pos
         while not self.end:
 
             self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
+            self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
+
             r.sleep()
         
             
