@@ -214,7 +214,7 @@ class ILoSA(Panda):
             self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
 
             
-            if any(np.array(self.feedback) > 0.05): # this avoids to activate the feedback on noise joystick
+            if any(np.abs(np.array(self.feedback)) > 0.05): # this avoids to activate the feedback on noise joystick
 
                 print("Received Feedback")
                 delta_inc, dK_inc = Interpret_3D(feedback=self.feedback, delta=self.delta, K=self.K_tot, delta_lim=self.attractor_lim, K_mean=self.K_mean)
@@ -230,7 +230,7 @@ class ILoSA(Panda):
             self.delta, self.K_tot = Force2Impedance(self.delta, self.K_tot, f_stable, self.attractor_lim)
             self.K_tot=[self.K_tot]
             self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
-            if self.sigma / self.Stiffness.max_var > self.theta_stiffness: 
+            if self.sigma / self.Delta.max_var > self.theta_stiffness: 
                 self.K_tot=self.K_tot*self.scaling_factor
             x_new = cart_pos[0][0] + self.delta[0]  
             y_new = cart_pos[0][1] + self.delta[1]  
