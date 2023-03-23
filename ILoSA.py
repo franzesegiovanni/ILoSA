@@ -250,7 +250,7 @@ class ILoSA(Panda):
             self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
 
             
-            if any(np.array(self.feedback) > 0.05): # this avoids to activate the feedback on noise joystick
+            if any(np.abs(np.array(self.feedback)) > 0.05): # this avoids to activate the feedback on noise joystick
 
                 print("Received Feedback")
                 delta_inc, dK_inc = Interpret_3D(feedback=self.feedback, delta=self.delta, K=self.K_tot, delta_lim=self.attractor_lim, K_mean=self.K_mean)
