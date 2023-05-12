@@ -113,15 +113,15 @@ class ILoSA(Panda):
     def load(self, file='last'):
         data =np.load(str(pathlib.Path().resolve())+'/data/'+str(file)+'.npz')
 
-        self.nullspace_traj=data['nullspace_traj'], 
-        self.nullspace_joints=data['nullspace_joints'], 
-        self.training_traj=data['training_traj'],
-        self.training_delta=data['training_delta'],
-        self.training_dK=data['training_dK'] 
-        self.nullspace_traj=self.nullspace_traj[0]
-        self.nullspace_joints=  self.nullspace_joints[0]
-        self.training_traj=self.training_traj[0]
-        self.training_delta=self.training_delta[0]
+        self.nullspace_traj=data['nullspace_traj']
+        self.nullspace_joints=data['nullspace_joints']
+        self.training_traj=data['training_traj']
+        self.training_delta=data['training_delta']
+        self.training_dK=data['training_dK']
+        self.nullspace_traj=self.nullspace_traj
+        self.nullspace_joints=  self.nullspace_joints
+        self.training_traj=self.training_traj
+        self.training_delta=self.training_delta
         self.training_dK=self.training_dK
 
     def Train_GPs(self):
