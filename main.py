@@ -5,7 +5,8 @@ Cognitive Robotics, TU Delft
 This code is part of TERI (TEaching Robots Interactively) project
 """
 #%%
-from ILoSA import ILoSA
+import ILoSA
+#import ILoSA  
 import time
 #%%
 if __name__ == '__main__':

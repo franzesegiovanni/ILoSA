@@ -9,11 +9,9 @@ import rospy
 import math
 import numpy as np
 import time
-import pandas as pd
 from sensor_msgs.msg import JointState, Joy
 from geometry_msgs.msg import Point, WrenchStamped, PoseStamped, Vector3
 from std_msgs.msg import Float32MultiArray
-from sys import exit
 
 from pynput.keyboard import Listener, KeyCode
 

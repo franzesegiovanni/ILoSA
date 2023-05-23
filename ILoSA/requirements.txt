@@ -1,0 +1,7 @@
+matplotlib==3.1.2
+numpy==1.24.3
+pynput==1.7.6
+rospy==1.16.0
+scikit_learn==1.2.0
+scipy==1.10.1
+sensor_msgs==1.13.1
