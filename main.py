@@ -8,8 +8,10 @@ This code is part of TERI (TEaching Robots Interactively) project
 from ILoSA import ILoSA
 import time
 from geometry_msgs.msg import PoseStamped
+import rospy
 #%%
 if __name__ == '__main__':
+    rospy.init_node('ILoSA', anonymous=True)
     ILoSA=ILoSA()
     ILoSA.connect_ROS()
     time.sleep(5)
