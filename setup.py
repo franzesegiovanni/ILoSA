@@ -6,7 +6,7 @@ setup(
     description='Interactive Learning of Stiffness and Attractors',
     author='Giovanni Franzese',
     author_email='g.franzese@tudelft.nl',
-    packages=['ILoSA', 'franka_gripper', 'franka_msgs'],
+    packages=['ILoSA', 'franka_gripper.msg', 'franka_msgs.msg'],
     install_requires=[
         'matplotlib',
         'numpy',
