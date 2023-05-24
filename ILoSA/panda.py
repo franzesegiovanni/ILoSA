@@ -22,6 +22,7 @@ from pynput.keyboard import Listener, KeyCode
 class Panda():
 
     def __init__(self):
+        super(Panda,self).__init__()
         self.K_ori  = 30.0
         self.K_cart = 600.0
         self.K_null = 10.0
@@ -93,7 +94,6 @@ class Panda():
         self.stop_pub.publish(self.stop_command)    
 
     def connect_ROS(self):
-        rospy.init_node('ILoSA', anonymous=True)
         self.r=rospy.Rate(self.control_freq)
 
         rospy.Subscriber("/cartesian_pose", PoseStamped, self.ee_pose_callback)

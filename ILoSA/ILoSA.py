@@ -18,7 +18,7 @@ class Struct:
 
 class ILoSA(Panda):
     def __init__(self):
-        super().__init__()
+        super(ILoSA,self).__init__()
         self.rec_freq = 10  # [Hz]
         self.control_freq=100 # [Hz]
         # stiffness parameters
