@@ -17,7 +17,7 @@ from pynput.keyboard import Listener, KeyCode
 
 class Panda():
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.K_ori  = 30.0
         self.K_cart = 600.0
         self.K_null = 10.0
@@ -28,6 +28,10 @@ class Panda():
         # Start keyboard listener
         self.listener = Listener(on_press=self._on_press)
         self.listener.start()
+        
+        self.node_name = "Panda"
+        if("node_name" in kwargs):
+            self.node_name = kwargs["node_name"] 
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
@@ -58,8 +62,22 @@ class Panda():
         self.left_btn = data.buttons[0]
         self.right_btn = data.buttons[1]
 
-    def connect_ROS(self):
-        rospy.init_node('ILoSA', anonymous=True)
+    def connect_ROS(self, node_name="panda"):
+        # Check the the node was already started
+        # either not started or with started with a different name
+        if (rospy.get_name() != node_name): 
+            try:
+                rospy.init_node(node_name, anonymous=False)
+                pass
+            except rospy.exceptions.ROSException:
+                nodes_str = ', '.join(node for node in rosnode.get_node_names())
+                print("Node already initialized with another name. Did you mean one of those: " + nodes_str + " ?")
+                print("Doing nothing")
+                return
+        else:
+            print("Node is already initialized. Doing nothing")
+            return
+
         r=rospy.Rate(self.control_freq)
 
         rospy.Subscriber("/cartesian_pose", PoseStamped, self.ee_pose_callback)
@@ -82,9 +100,9 @@ class Panda():
         goal.header.seq = 1
         goal.header.stamp = rospy.Time.now()
         goal.header.frame_id = "map"
-        goal.pose.position.x = pos[0]
         goal.pose.position.y = pos[1]
         goal.pose.position.z = pos[2]
+        goal.pose.position.x = pos[0]
 
         goal.pose.orientation.x = quat[0]
         goal.pose.orientation.y = quat[1]
@@ -156,3 +174,12 @@ class Panda():
         rot_stiff=[self.K_ori , self.K_ori , self.K_ori ] 
         null_stiff=[0.0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+
+if __name__ == '__main__':
+    rospy.sleep(1)
+    panda = Panda(sigma=True)
+    panda.connect_ROS(node_name="Panda")
+    
+    r = rospy.Rate(panda.control_freq)
+    while not rospy.is_shutdown():
+        r.sleep()

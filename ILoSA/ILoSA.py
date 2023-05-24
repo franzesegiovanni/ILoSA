@@ -16,8 +16,8 @@ class Struct:
     pass
 
 class ILoSA(Panda):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.rec_freq = 10  # [Hz]
         self.control_freq=100 # [Hz]
         # stiffness parameters
@@ -265,3 +265,11 @@ class ILoSA(Panda):
                 print("Scaling_factor_nullspace:" + str(self.scaling_factor_ns))   
             r.sleep()
 
+if __name__ == '__main__':
+    rospy.sleep(1)
+    ilosa = ILoSA()
+    ilosa.connect_ROS(node_name="ILoSA")
+
+    r=rospy.Rate(ilosa.control_freq)
+    while not rospy.is_shutdown():
+        r.sleep()
