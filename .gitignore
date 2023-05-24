@@ -5,3 +5,8 @@ ILoSA/__pycache__/ILoSA.cpython-38.pyc
 ILoSA/__pycache__/panda.cpython-38.pyc
 ILoSA/__pycache__/utils.cpython-38.pyc
 example/.ipynb_checkpoints/Gaussian Process Dynamical System -checkpoint.ipynb
+
+ILoSA.egg-info/
+build/
+
+
