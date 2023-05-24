@@ -21,8 +21,10 @@ from pynput.keyboard import Listener, KeyCode
 
 class Panda():
 
-    def __init__(self):
-        super(Panda,self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Panda,self).__init__(*args, **kwargs)
+        self.control_freq = 100 # [Hz]
+        
         self.K_ori  = 30.0
         self.K_cart = 600.0
         self.K_null = 10.0
@@ -257,3 +259,14 @@ class Panda():
         rot_stiff=[0.0 , 0.0, 0.0] 
         null_stiff=[0.0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+
+
+if __name__ == '__main__':
+    rospy.sleep(1)
+    panda = Panda()
+    rospy.init_node('Panda', anonymous=False)
+    panda.connect_ROS()
+    
+    r = rospy.Rate(1) # Hz
+    while not rospy.is_shutdown():
+        r.sleep()

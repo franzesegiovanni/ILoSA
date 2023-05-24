@@ -7,20 +7,20 @@ This code is part of TERI (TEaching Robots Interactively) project
 #!/usr/bin/env python
 import numpy as np
 import pandas as pd
-from ILoSA.gaussian_process import *
-from ILoSA.panda import *
-from ILoSA.utils import *
-from ILoSA.data_prep import *
+from ILoSA.gaussian_process import * 
+from ILoSA.panda import * 
+from ILoSA.utils import * 
+from ILoSA.data_prep import * 
 import pickle
 # class for storing different data types into one variable
 class Struct:
     pass
 
 class ILoSA(Panda):
-    def __init__(self):
-        super(ILoSA,self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(ILoSA,self).__init__(*args, **kwargs)
         self.rec_freq = 10  # [Hz]
-        self.control_freq=100 # [Hz]
+
         # stiffness parameters
         self.K_min = 0.0
         self.K_max = 2000.0
@@ -308,3 +308,12 @@ class ILoSA(Panda):
                 print("Scaling_factor_nullspace:" + str(self.scaling_factor_ns))   
             r.sleep()
 
+if __name__ == '__main__':
+    rospy.sleep(1)
+    panda = Panda()
+    rospy.init_node('ILoSA', anonymous=False)
+    panda.connect_ROS()
+    
+    r = rospy.Rate(1) # Hz
+    while not rospy.is_shutdown():
+        r.sleep()

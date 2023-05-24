@@ -5,7 +5,7 @@ Cognitive Robotics, TU Delft
 This code is part of TERI (TEaching Robots Interactively) project
 """
 #%%
-from ILoSA import ILoSA
+from ILoSA.ILoSA import ILoSA
 import time
 from geometry_msgs.msg import PoseStamped
 import rospy
