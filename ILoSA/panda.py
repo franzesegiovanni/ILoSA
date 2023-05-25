@@ -25,7 +25,6 @@ class Panda():
         super(Panda,self).__init__(*args, **kwargs)
         self.control_freq = 100 # [Hz]
         
-        
         self.K_ori  = 30.0
         self.K_cart = 600.0
         self.K_null = 10.0
@@ -107,7 +106,9 @@ class Panda():
             self.move_pub.unregister()
             self.homing_pub.unregister()
             self.stop_pub.unregister()
-        except rospy.ROSException or AttributeError:
+        except rospy.ROSException:
+            print("Fail to unregister publishers and subscribers. Check if the topics and connections are alive.")
+        except AttributeError:
             print("Seems like we are not connected to ROS. Doing nothing.")
         return
 
@@ -266,15 +267,16 @@ class Panda():
         null_stiff=[0.0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
 
+    def foo(self):
+        print('bar')
 
 if __name__ == '__main__':
     rospy.sleep(1)
     panda = Panda()
     rospy.init_node('Panda', anonymous=False)
-    panda.disconnect_ROS()
     panda.connect_ROS()
-    panda.disconnect_ROS()
-     
-    r = rospy.Rate(1) # Hz
+    rospy.on_shutdown(panda.disconnect_ROS) 
+    
     while not rospy.is_shutdown():
-        r.sleep()
+        rospy.sleep(1)
+    

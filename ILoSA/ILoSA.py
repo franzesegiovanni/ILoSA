@@ -131,34 +131,34 @@ class ILoSA(Panda):
 
     def save(self, data='last'):
         np.savez(str(pathlib.Path().resolve())+'/data/'+str(data)+'.npz', 
-        nullspace_traj=self.nullspace_traj, 
-        nullspace_joints=self.nullspace_joints, 
-        training_traj=self.training_traj,
+        nullspace_traj = self.nullspace_traj, 
+        nullspace_joints = self.nullspace_joints, 
+        training_traj = self.training_traj,
         training_ori = self.training_ori,
-        training_delta=self.training_delta,
-        training_gripper=self.training_gripper,
-        training_dK=self.training_dK)
+        training_delta = self.training_delta,
+        training_gripper = self.training_gripper,
+        training_dK = self.training_dK)
         print(np.shape(self.training_ori))
         print(np.shape(self.training_traj))  
 
     def load(self, file='last'):
         data =np.load(str(pathlib.Path().resolve())+'/data/'+str(file)+'.npz')
 
-        self.nullspace_traj=data['nullspace_traj']
-        self.nullspace_joints=data['nullspace_joints']
-        self.training_traj=data['training_traj']
-        self.training_ori=data['training_ori']
-        self.training_delta=data['training_delta']
-        self.training_dK=data['training_dK']
-        self.training_gripper=data['training_gripper'] 
-        self.nullspace_traj=self.nullspace_traj
-        self.nullspace_joints=  self.nullspace_joints
-        self.training_traj=self.training_traj
+        self.nullspace_traj = data['nullspace_traj']
+        self.nullspace_joints = data['nullspace_joints']
+        self.training_traj = data['training_traj']
+        self.training_ori = data['training_ori']
+        self.training_delta = data['training_delta']
+        self.training_dK = data['training_dK']
+        self.training_gripper = data['training_gripper'] 
+        self.nullspace_traj = self.nullspace_traj
+        self.nullspace_joints = self.nullspace_joints
+        self.training_traj = self.training_traj
         # print(np.shape(self.training_traj))
-        self.training_ori=self.training_ori
+        self.training_ori = self.training_ori
         # print(np.shape(self.training_ori))
-        self.training_delta=self.training_delta
-        self.training_dK=self.training_dK
+        self.training_delta = self.training_delta
+        self.training_dK = self.training_dK
 
     def Train_GPs(self):
         if len(self.training_traj)>0 and len(self.training_delta)>0:
@@ -192,6 +192,7 @@ class ILoSA(Panda):
                 pickle.dump(self.NullSpaceControl,nullspace)
         else: 
             print('No Null Space Control Policy Learned')    
+    
     def save_models(self):
         with open('models/delta.pkl','wb') as delta:
             pickle.dump(self.Delta,delta)
@@ -200,6 +201,7 @@ class ILoSA(Panda):
         if self.NullSpaceControl:
             with open('models/nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
+
     def load_models(self):
         try:
             with open('models/delta.pkl', 'rb') as delta:
@@ -216,6 +218,7 @@ class ILoSA(Panda):
                 self.NullSpace = pickle.load(nullspace)
         except:
             print("No NullSpace model saved")
+    
     def find_alpha(self):
         alpha=np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
@@ -310,10 +313,10 @@ class ILoSA(Panda):
 
 if __name__ == '__main__':
     rospy.sleep(1)
-    panda = Panda()
+    ilosa = ILoSA()
     rospy.init_node('ILoSA', anonymous=False)
-    panda.connect_ROS()
-    
-    r = rospy.Rate(1) # Hz
+    ilosa.connect_ROS()
+    rospy.on_shutdown(ilosa.disconnect_ros)
+
     while not rospy.is_shutdown():
-        r.sleep()
+        rospy.sleep(1)
