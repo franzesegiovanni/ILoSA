@@ -25,6 +25,7 @@ class Panda():
         super(Panda,self).__init__(*args, **kwargs)
         self.control_freq = 100 # [Hz]
         
+        
         self.K_ori  = 30.0
         self.K_cart = 600.0
         self.K_null = 10.0
@@ -32,7 +33,7 @@ class Panda():
         self.start = True
         self.end = False
         
-        self.move_command=MoveActionGoal()
+        self.move_command = MoveActionGoal()
         self.grasp_command = GraspActionGoal()
         self.home_command = HomingActionGoal()
         self.stop_command = StopActionGoal()
@@ -60,16 +61,13 @@ class Panda():
     def joint_callback(self, data):
         self.joint_pos = data.position[0:7]
 
-
     # gripper state subscriber
     def gripper_callback(self, data):
         self.gripper_pos = data.position[7]+data.position[8]
 
-
     # spacemouse joystick subscriber
     def teleop_callback(self, data):
         self.feedback = np.array([data.x, data.y, data.z])
-
 
     # spacemouse buttons subscriber
     def btns_callback(self, data):
@@ -94,27 +92,41 @@ class Panda():
 
     def stop_gripper(self):
         self.stop_pub.publish(self.stop_command)    
+    
+    def disconnect_ROS(self):
+        try:
+            self.cart_pose_sub.unregister()
+            self.spacenav_offset_sub.unregister()
+            self.spacenav_joy_sub.unregister()
+            self.joint_states_sub.unregister()
+                                    
+            self.goal_pub.unregister()
+            self.stiff_pub.unregister()
+            self.configuration_pub.unregister()
+            self.grasp_pub.unregister()
+            self.move_pub.unregister()
+            self.homing_pub.unregister()
+            self.stop_pub.unregister()
+        except rospy.ROSException or AttributeError:
+            print("Seems like we are not connected to ROS. Doing nothing.")
+        return
 
     def connect_ROS(self):
-        self.r=rospy.Rate(self.control_freq)
+        self.r = rospy.Rate(self.control_freq)
+        self.cart_pose_sub          = rospy.Subscriber("/cartesian_pose", PoseStamped, self.ee_pose_callback)
+        self.spacenav_offset_sub    = rospy.Subscriber("/spacenav/offset", Vector3, self.teleop_callback)
+        self.spacenav_joy_sub       = rospy.Subscriber("/spacenav/joy", Joy, self.btns_callback)
+        self.joint_states_sub       = rospy.Subscriber("/joint_states", JointState, self.joint_callback)
+        self.joint_states_sub.impl.add_callback(self.gripper_callback, None)
+        #self.rospy.Subscriber("/joint_states", JointState, self.gripper_callback)
 
-        rospy.Subscriber("/cartesian_pose", PoseStamped, self.ee_pose_callback)
-        rospy.Subscriber("/spacenav/offset", Vector3, self.teleop_callback)
-        rospy.Subscriber("/spacenav/joy", Joy, self.btns_callback)
-        rospy.Subscriber("/joint_states", JointState, self.joint_callback)
-        rospy.Subscriber("/joint_states", JointState, self.gripper_callback)
-
-        self.goal_pub  = rospy.Publisher('/equilibrium_pose', PoseStamped, queue_size=0)
-        self.stiff_pub = rospy.Publisher('/stiffness', Float32MultiArray, queue_size=0)
-        self.configuration_pub = rospy.Publisher("/equilibrium_configuration",Float32MultiArray, queue_size=0)
-        self.grasp_pub = rospy.Publisher("/franka_gripper/grasp/goal", GraspActionGoal,
-                                           queue_size=0)
-        self.move_pub = rospy.Publisher("/franka_gripper/move/goal", MoveActionGoal,
-                                           queue_size=0)
-        self.homing_pub = rospy.Publisher("/franka_gripper/homing/goal", HomingActionGoal,
-                                          queue_size=0)
-        self.stop_pub = rospy.Publisher("/franka_gripper/stop/goal", StopActionGoal,
-                                          queue_size=0)
+        self.goal_pub           = rospy.Publisher('/equilibrium_pose', PoseStamped, queue_size=0)
+        self.stiff_pub          = rospy.Publisher('/stiffness', Float32MultiArray, queue_size=0)
+        self.configuration_pub  = rospy.Publisher("/equilibrium_configuration",Float32MultiArray, queue_size=0)
+        self.grasp_pub          = rospy.Publisher("/franka_gripper/grasp/goal", GraspActionGoal, queue_size=0)
+        self.move_pub           = rospy.Publisher("/franka_gripper/move/goal", MoveActionGoal, queue_size=0)
+        self.homing_pub         = rospy.Publisher("/franka_gripper/homing/goal", HomingActionGoal,queue_size=0)
+        self.stop_pub           = rospy.Publisher("/franka_gripper/stop/goal", StopActionGoal, queue_size=0)
         
     def set_stiffness(self,pos_stiff,rot_stiff,null_stiff):
         stiff_des = Float32MultiArray()
@@ -156,9 +168,7 @@ class Panda():
         interp_dist = 0.001  # [m]
         step_num_lin = math.floor(dist / interp_dist)
 
-        
         print("num of steps linear", step_num_lin)
-        
         
         q_start=np.quaternion(start_ori[0], start_ori[1], start_ori[2], start_ori[3])
         print("q_start", q_start)
@@ -174,7 +184,6 @@ class Panda():
         print(theta)
         interp_dist_polar = 0.001 
         step_num_polar = math.floor(theta / interp_dist_polar)
-
         
         print("num of steps polar", step_num_polar)
         
@@ -191,8 +200,7 @@ class Panda():
         goal.pose.position.y = y[0]
         goal.pose.position.z = z[0]
         
-        
-        quat=np.slerp_vectorized(q_start, q_goal, 0.0)
+        quat = np.slerp_vectorized(q_start, q_goal, 0.0)
         goal.pose.orientation.x = quat.x
         goal.pose.orientation.y = quat.y
         goal.pose.orientation.z = quat.z
@@ -251,8 +259,6 @@ class Panda():
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
 
             r.sleep()
-        
-            
 
     def Passive(self):
         pos_stiff=[0.0,0.0,0.0]
@@ -265,8 +271,10 @@ if __name__ == '__main__':
     rospy.sleep(1)
     panda = Panda()
     rospy.init_node('Panda', anonymous=False)
+    panda.disconnect_ROS()
     panda.connect_ROS()
-    
+    panda.disconnect_ROS()
+     
     r = rospy.Rate(1) # Hz
     while not rospy.is_shutdown():
         r.sleep()
