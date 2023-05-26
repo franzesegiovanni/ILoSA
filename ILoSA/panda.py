@@ -106,7 +106,7 @@ class Panda():
             self.move_pub.unregister()
             self.homing_pub.unregister()
             self.stop_pub.unregister()
-        except rospy.ROSException:
+        except rospy.exception.ROSException:
             print("Fail to unregister publishers and subscribers. Check if the topics and connections are alive.")
         except AttributeError:
             print("Seems like we are not connected to ROS. Doing nothing.")
