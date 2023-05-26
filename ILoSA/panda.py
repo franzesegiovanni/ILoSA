@@ -45,13 +45,14 @@ class Panda():
         self.grasp_command.goal.width = 1
         # Start keyboard listener
         self.listener = None #Listener(on_press=self._on_press)
-        self.listener.start()
+        #self.listener.start()
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
         if key == KeyCode.from_char('e'):
             self.end = True
             self.listener.stop()
+        return false
 
     def ee_pose_callback(self, data):
         self.cart_pos = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
@@ -257,8 +258,8 @@ class Panda():
         self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
         self.recorded_gripper= self.gripper_pos
-        while not self.end:
 
+        while not self.end:
             self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
