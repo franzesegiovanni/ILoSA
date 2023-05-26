@@ -222,16 +222,21 @@ class ILoSA(Panda):
     def find_alpha(self):
         alpha=np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
-            pos= self.Delta.X[i,:]+self.Delta.length_scales 
+            pos = self.Delta.X[i,:]+self.Delta.length_scales 
             dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(pos.reshape(1,-1))                                                                                                                                                                
             alpha[i]=self.max_grad_force/ np.sqrt(dSigma_dx**2+dSigma_dy**2+dSigma_dz**2)
             self.alpha=np.min(alpha)
 
     def Interactive_Control(self, verboose=False):
-        r=rospy.Rate(self.control_freq)
+        r = rospy.Rate(self.control_freq)
         self.find_alpha()
         print("Press e to stop.")
-        self.end=False
+        
+        # Start the listener only while getting feedback
+        self.end = False
+        self.listener = Listener(on_press = self._on_press)
+        self.listener.start()
+
         while not self.end:
             # read the actual position of the robot
 

@@ -44,13 +44,14 @@ class Panda():
         self.grasp_command.goal.force = 5
         self.grasp_command.goal.width = 1
         # Start keyboard listener
-        self.listener = Listener(on_press=self._on_press)
+        self.listener = None #Listener(on_press=self._on_press)
         self.listener.start()
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
         if key == KeyCode.from_char('e'):
             self.end = True
+            self.listener.stop()
 
     def ee_pose_callback(self, data):
         self.cart_pos = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
@@ -239,7 +240,11 @@ class Panda():
         r=rospy.Rate(self.rec_freq)
         self.Passive()
 
+        # Start the listener only while in kines. demo.
         self.end = False
+        self.listener = Listener(on_press = self._on_press)
+        self.listener.start()
+
         init_pos = self.cart_pos
         vel = 0
         print("Move robot to start recording.")
