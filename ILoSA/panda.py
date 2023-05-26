@@ -273,9 +273,6 @@ class Panda():
         null_stiff=[0.0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
 
-    def foo(self):
-        print('bar')
-
 if __name__ == '__main__':
     rospy.sleep(1)
     panda = Panda()
