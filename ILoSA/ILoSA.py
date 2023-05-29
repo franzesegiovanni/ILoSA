@@ -321,7 +321,7 @@ if __name__ == '__main__':
     ilosa = ILoSA()
     rospy.init_node('ILoSA', anonymous=False)
     ilosa.connect_ROS()
-    rospy.on_shutdown(ilosa.disconnect_ros)
+    rospy.on_shutdown(ilosa.disconnect_ROS)
 
     while not rospy.is_shutdown():
         rospy.sleep(1)

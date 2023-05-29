@@ -52,7 +52,7 @@ class Panda():
         if key == KeyCode.from_char('e'):
             self.end = True
             self.listener.stop()
-        return false
+            return False
 
     def ee_pose_callback(self, data):
         self.cart_pos = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
