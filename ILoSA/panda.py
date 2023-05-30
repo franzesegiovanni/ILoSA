@@ -22,14 +22,13 @@ from pynput.keyboard import Listener, KeyCode
 class Panda():
 
     def __init__(self, *args, **kwargs):
-        super(Panda,self).__init__(*args, **kwargs)
+        super(Panda,self).__init__()
         self.control_freq = 100 # [Hz]
         
         self.K_ori  = 30.0
         self.K_cart = 600.0
         self.K_null = 10.0
 
-        self.start = True
         self.end = False
         
         self.move_command = MoveActionGoal()
@@ -43,9 +42,18 @@ class Panda():
         self.grasp_command.goal.speed = 0.1
         self.grasp_command.goal.force = 5
         self.grasp_command.goal.width = 1
-        # Start keyboard listener
-        self.listener = None #Listener(on_press=self._on_press)
-        #self.listener.start()
+        
+        self.use_kb = True 
+        if 'use_kb' in kwargs:
+            self.use_kb = kwargs['use_kb']
+            print("kb: ", self.use_kb)
+
+    def start_kb_listener(self):
+        if self.use_kb:
+            self.end = False
+            self.listener = Listener(on_press = self._on_press)
+            self.listener.start()
+        return
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
@@ -240,11 +248,7 @@ class Panda():
     def Kinesthetic_Demonstration(self, trigger=0.005): 
         r=rospy.Rate(self.rec_freq)
         self.Passive()
-
-        # Start the listener only while in kines. demo.
-        self.end = False
-        self.listener = Listener(on_press = self._on_press)
-        self.listener.start()
+        self.start_kb_listener()
 
         init_pos = self.cart_pos
         vel = 0
@@ -266,6 +270,8 @@ class Panda():
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
 
             r.sleep()
+        print('Reconding ended')
+        return
 
     def Passive(self):
         pos_stiff=[0.0,0.0,0.0]

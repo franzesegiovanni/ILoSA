@@ -231,11 +231,8 @@ class ILoSA(Panda):
         r = rospy.Rate(self.control_freq)
         self.find_alpha()
         print("Press e to stop.")
-        
-        # Start the listener only while getting feedback
-        self.end = False
-        self.listener = Listener(on_press = self._on_press)
-        self.listener.start()
+       
+        self.start_kb_listener()
 
         while not self.end:
             # read the actual position of the robot
