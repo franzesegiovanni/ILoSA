@@ -232,7 +232,8 @@ class ILoSA(Panda):
         self.find_alpha()
         print("Press e to stop.")
        
-        self.start_kb_listener()
+        self.end = False
+        if self.use_kb: self.start_kb_listener()
 
         while not self.end:
             # read the actual position of the robot
