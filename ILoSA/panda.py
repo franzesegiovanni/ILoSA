@@ -20,18 +20,11 @@ from sys import exit
 # input stuff
 from pynput.keyboard import Listener, KeyCode
 from PyQt5.QtWidgets import QWidget, QMessageBox
-from PyQt5.QtCore import QRunnable, QThreadPool, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal
 
-class Worker(QRunnable):
-    def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-
-    @pyqtSlot()
-    def run(self):
-        self.fn(*self.args, **self.kwargs)
+class GuiSignals(QObject):
+    get_end_demo = pyqtSignal()
+    get_save_demo = pyqtSignal()
 
 class Panda():
 
@@ -56,17 +49,17 @@ class Panda():
         self.grasp_command.goal.width = 1
         
         self.end = False
-        use_kb = True
+        self.use_kb = True
         if 'use_kb' in kwargs:
-            use_kb = kwargs['use_kb']
+            self.use_kb = kwargs['use_kb']
 
-        if use_kb:
+        if self.use_kb:
             self.end_demo_user_input = self.kb_end_demo
             self.save_demo_user_input = self.kb_save_demo
         else:
-            self.end_demo_user_input = self.window_end_demo
-            self.save_demo_user_input = self.window_save_demo
-
+            self.signals = GuiSignals()
+            self.end_demo_user_input = self.request_end_demo_window
+            self.save_demo_user_input = self.request_save_demo_window
     def kb_end_demo(self):
         print("Recording started. Press e to stop.")
         self.end = False
@@ -77,37 +70,24 @@ class Panda():
     def kb_save_demo():
         return input("Do you want to keep this demonstration? [y/n] \n")
     
-    def window_end_demo(self):
-        print('prompting window')
+    def request_end_demo_window(self):
         self.end = False
-        self.threadpool = QThreadPool()
-        
-        self.worker = Worker(self.config_end_demo_window)
-        self.threadpool.start(self.worker)
-        print('prompt started')
+        # ask the main thread to create the "end demo" window
+        self.signals.get_end_demo.emit()
+        self.received = None 
+    
+    def receive(self, data):
+        print('panda received %s from main thread'%data)
+        self.received = data
         return
 
-    def config_end_demo_window(self):
-        msg = QMessageBox()
-        msg.setText("End Interaction?")
-        msg.setStandardButtons(QMessageBox.Ok)
-        choice = msg.exec()
-        print('choice: ', choice)
-        self.end = choice == QMessageBox.Ok
-        print('pressed yes')
-        return
-    
-    def window_save_demo(self):
-        msg = QMessageBox()
-        msg.setText("Save Demonstation?")
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        choice = msg.exec()
-        if choice == QMessageBox.Yes:
-            ret = 'y'
-        else:
-            ret = 'n'
-        print('ret: ', ret)
-        return ret
+    def request_save_demo_window(self):
+        # Ask the main thread to create the "save demo" window
+        self.signals.get_save_demo.emit()
+        while self.received == None:
+            print("I am waiting....")
+            time.sleep(1)
+        return self.received
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
