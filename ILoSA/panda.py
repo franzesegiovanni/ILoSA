@@ -67,7 +67,7 @@ class Panda():
         self.listener.start()
         return
    
-    def kb_save_demo():
+    def kb_save_demo(self):
         return input("Do you want to keep this demonstration? [y/n] \n")
     
     def request_end_demo_window(self):
