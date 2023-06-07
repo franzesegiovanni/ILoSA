@@ -17,7 +17,21 @@ from franka_gripper.msg import GraspActionGoal, HomingActionGoal, StopActionGoal
 from std_msgs.msg import Float32MultiArray
 from sys import exit
 
+# input stuff
 from pynput.keyboard import Listener, KeyCode
+from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtCore import QRunnable, QThreadPool, pyqtSlot
+
+class Worker(QRunnable):
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    @pyqtSlot()
+    def run(self):
+        self.fn(*self.args, **self.kwargs)
 
 class Panda():
 
@@ -29,8 +43,6 @@ class Panda():
         self.K_cart = 600.0
         self.K_null = 10.0
 
-        self.end = False
-        
         self.move_command = MoveActionGoal()
         self.grasp_command = GraspActionGoal()
         self.home_command = HomingActionGoal()
@@ -43,17 +55,59 @@ class Panda():
         self.grasp_command.goal.force = 5
         self.grasp_command.goal.width = 1
         
-        self.use_kb = True 
+        self.end = False
+        use_kb = True
         if 'use_kb' in kwargs:
-            self.use_kb = kwargs['use_kb']
-            print("kb: ", self.use_kb)
+            use_kb = kwargs['use_kb']
 
-    def start_kb_listener(self):
-        if self.use_kb:
-            self.end = False
-            self.listener = Listener(on_press = self._on_press)
-            self.listener.start()
+        if use_kb:
+            self.end_demo_user_input = self.kb_end_demo
+            self.save_demo_user_input = self.kb_save_demo
+        else:
+            self.end_demo_user_input = self.window_end_demo
+            self.save_demo_user_input = self.window_save_demo
+
+    def kb_end_demo(self):
+        print("Recording started. Press e to stop.")
+        self.end = False
+        self.listener = Listener(on_press = self._on_press)
+        self.listener.start()
         return
+   
+    def kb_save_demo():
+        return input("Do you want to keep this demonstration? [y/n] \n")
+    
+    def window_end_demo(self):
+        print('prompting window')
+        self.end = False
+        self.threadpool = QThreadPool()
+        
+        self.worker = Worker(self.config_end_demo_window)
+        self.threadpool.start(self.worker)
+        print('prompt started')
+        return
+
+    def config_end_demo_window(self):
+        msg = QMessageBox()
+        msg.setText("End Interaction?")
+        msg.setStandardButtons(QMessageBox.Ok)
+        choice = msg.exec()
+        print('choice: ', choice)
+        self.end = choice == QMessageBox.Ok
+        print('pressed yes')
+        return
+    
+    def window_save_demo(self):
+        msg = QMessageBox()
+        msg.setText("Save Demonstation?")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        choice = msg.exec()
+        if choice == QMessageBox.Yes:
+            ret = 'y'
+        else:
+            ret = 'n'
+        print('ret: ', ret)
+        return ret
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
@@ -248,21 +302,24 @@ class Panda():
     def Kinesthetic_Demonstration(self, trigger=0.005): 
         r=rospy.Rate(self.rec_freq)
         self.Passive()
-        self.start_kb_listener()
-
-        init_pos = self.cart_pos
+        
+        #init_pos = self.cart_pos
         vel = 0
         print("Move robot to start recording.")
         while vel < trigger:
             vel = math.sqrt((self.cart_pos[0]-init_pos[0])**2 + (self.cart_pos[1]-init_pos[1])**2 + (self.cart_pos[2]-init_pos[2])**2)
 
-        print("Recording started. Press e to stop.")
 
         self.recorded_traj = self.cart_pos
         self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
         self.recorded_gripper= self.gripper_pos
+        '''
+        
+        self.end_demo_user_input()
+        print(self.end, not self.end)
 
+        i = 0
         while not self.end:
             self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]

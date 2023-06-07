@@ -54,8 +54,9 @@ class ILoSA(Panda):
     def Record_NullSpace(self):
         self.Kinesthetic_Demonstration()
         print('Recording ended.')
-        save_demo = input("Do you want to keep this demonstration? [y/n] \n")
-
+        save_demo = self.save_demo_user_input() 
+        print('save demo: ', save_demo)
+        '''
         if save_demo.lower()=='y':
             if len(self.nullspace_traj)==0:
                 self.nullspace_traj=np.zeros((3,1))
@@ -71,7 +72,7 @@ class ILoSA(Panda):
             print("Demo Saved")
         else:
             print("Demo Discarded")
-  
+        '''
 
     def Record_Demonstration(self):
         self.Kinesthetic_Demonstration()
@@ -230,9 +231,8 @@ class ILoSA(Panda):
     def Interactive_Control(self, verboose=False):
         r = rospy.Rate(self.control_freq)
         self.find_alpha()
-        print("Press e to stop.")
-       
-        self.start_kb_listener()
+        
+        self.wait_for_user_input()
 
         while not self.end:
             # read the actual position of the robot
