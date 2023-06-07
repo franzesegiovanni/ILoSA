@@ -306,6 +306,7 @@ class Panda():
         #init_pos = self.cart_pos
         vel = 0
         print("Move robot to start recording.")
+        '''
         while vel < trigger:
             vel = math.sqrt((self.cart_pos[0]-init_pos[0])**2 + (self.cart_pos[1]-init_pos[1])**2 + (self.cart_pos[2]-init_pos[2])**2)
 
@@ -321,13 +322,18 @@ class Panda():
 
         i = 0
         while not self.end:
+            print(self.end, not self.end, i)
+            i += 1
+            '''
             self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
-
-            r.sleep()
-        print('Reconding ended')
+            '''
+            rospy.sleep(2)
+            if i > 5: break
+            #r.sleep()
+        print('Kinesthetic Demo ended')
         return
 
     def Passive(self):
