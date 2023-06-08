@@ -54,17 +54,21 @@ class ILoSA(Panda):
     def Record_NullSpace(self):
         self.Kinesthetic_Demonstration()
         print('Recording ended.')
+        # get user imput from keyboard or GUI 
         save_demo = self.save_demo_user_input() 
         print('save demo: ', save_demo)
-        '''
+        
         if save_demo.lower()=='y':
             if len(self.nullspace_traj)==0:
+                
                 self.nullspace_traj=np.zeros((3,1))
-                self.nullspace_joints=np.zeros((7,1))
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj.transpose() ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint.transpose() ), axis=1)
+                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj), axis=1)
                 self.nullspace_traj=np.delete(self.nullspace_traj, 0,1)
+
+                self.nullspace_joints=np.zeros((7,1))
+                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
                 self.nullspace_joints=np.delete(self.nullspace_joints,0,1)
+                
             else:
                 self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=1)
                 self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
@@ -72,12 +76,13 @@ class ILoSA(Panda):
             print("Demo Saved")
         else:
             print("Demo Discarded")
-        '''
 
     def Record_Demonstration(self):
         self.Kinesthetic_Demonstration()
         print('Recording ended.')
-        save_demo = input("Do you want to keep this demonstration? [y/n] \n")
+        # get user imput from keyboard or GUI 
+        save_demo = self.save_demo_user_input() 
+        
         if save_demo.lower()=='y':
             if len(self.training_traj)==0:
                 self.training_traj=np.zeros((1,3))
@@ -232,7 +237,8 @@ class ILoSA(Panda):
         r = rospy.Rate(self.control_freq)
         self.find_alpha()
         
-        self.wait_for_user_input()
+        # Get user imput from keyboard or GUI
+        self.end_demo_user_input()
 
         while not self.end:
             # read the actual position of the robot

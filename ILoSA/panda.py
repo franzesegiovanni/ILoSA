@@ -33,7 +33,7 @@ class Panda():
         self.control_freq = 100 # [Hz]
         
         self.K_ori  = 30.0
-        self.K_cart = 600.0
+        self.K_cart = 100.0
         self.K_null = 10.0
 
         self.move_command = MoveActionGoal()
@@ -202,6 +202,7 @@ class Panda():
 
 
     def go_to_pose(self, goal_pose):
+        print('panda received: ', goal_pose, ' of type ', type(goal_pose))
         # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()
         start = self.cart_pos
         start_ori=self.cart_ori
@@ -283,36 +284,25 @@ class Panda():
         r=rospy.Rate(self.rec_freq)
         self.Passive()
         
-        #init_pos = self.cart_pos
+        init_pos = self.cart_pos
         vel = 0
         print("Move robot to start recording.")
-        '''
         while vel < trigger:
             vel = math.sqrt((self.cart_pos[0]-init_pos[0])**2 + (self.cart_pos[1]-init_pos[1])**2 + (self.cart_pos[2]-init_pos[2])**2)
-
 
         self.recorded_traj = self.cart_pos
         self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
         self.recorded_gripper= self.gripper_pos
-        '''
         
+        # gets user imput using keyboard or gui
         self.end_demo_user_input()
-        print(self.end, not self.end)
-
-        i = 0
         while not self.end:
-            print(self.end, not self.end, i)
-            i += 1
-            '''
             self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
-            '''
-            rospy.sleep(2)
-            if i > 5: break
-            #r.sleep()
+            
         print('Kinesthetic Demo ended')
         return
 
