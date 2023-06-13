@@ -192,7 +192,6 @@ class Panda():
         goal.pose.orientation.y = quat[2]
         goal.pose.orientation.z = quat[3]
         
-
         self.goal_pub.publish(goal)
 
     def set_configuration(self,joint):
@@ -202,32 +201,36 @@ class Panda():
 
 
     def go_to_pose(self, goal_pose):
-        print('panda received: ', goal_pose, ' of type ', type(goal_pose))
         # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()
         start = self.cart_pos
-        start_ori=self.cart_ori
-        goal_=np.array([goal_pose.pose.position.x, goal_pose.pose.position.y, goal_pose.pose.position.z])
+        start_ori = self.cart_ori
+        goal_ = np.array([goal_pose.pose.position.x, goal_pose.pose.position.y, goal_pose.pose.position.z])
         # interpolate from start to goal with attractor distance of approx 1 mm
+        
+        # dist = np.linalg.norm(goal-start)
         squared_dist = np.sum(np.subtract(start, goal_)**2, axis=0)
         dist = np.sqrt(squared_dist)
         print("dist", dist)
+
         interp_dist = 0.001  # [m]
         step_num_lin = math.floor(dist / interp_dist)
-
         print("num of steps linear", step_num_lin)
-        
-        q_start=np.quaternion(start_ori[0], start_ori[1], start_ori[2], start_ori[3])
-        print("q_start", q_start)
-        q_goal=np.quaternion(goal_pose.pose.orientation.w, goal_pose.pose.orientation.x, goal_pose.pose.orientation.y, goal_pose.pose.orientation.z)
-        inner_prod=q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
+
+        q_start = np.quaternion(start_ori[0], start_ori[1], start_ori[2], start_ori[3])
+        #print("q_start", q_start)
+        q_goal = np.quaternion(goal_pose.pose.orientation.w, goal_pose.pose.orientation.x, goal_pose.pose.orientation.y, goal_pose.pose.orientation.z)
+        #print("q_goal", q_goal)
+
+        inner_prod = q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
         if inner_prod < 0:
             q_start.x=-q_start.x
             q_start.y=-q_start.y
             q_start.z=-q_start.z
             q_start.w=-q_start.w
         inner_prod=q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
+        
         theta= np.arccos(np.abs(inner_prod))
-        print(theta)
+        #print(theta)
         interp_dist_polar = 0.001 
         step_num_polar = math.floor(theta / interp_dist_polar)
         
@@ -252,13 +255,15 @@ class Panda():
         goal.pose.orientation.z = quat.z
         goal.pose.orientation.w = quat.w
 
-        self.goal_pub.publish(goal)
-
         pos_stiff=[self.K_cart, self.K_cart, self.K_cart]
         rot_stiff=[self.K_ori, self.K_ori, self.K_ori]
         null_stiff=[0]
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
-        self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+        # remove this repeated?
+        #self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+        
+        # send stiff before sending goal
+        self.goal_pub.publish(goal)
 
         goal = PoseStamped()
         for i in range(step_num):
@@ -293,7 +298,7 @@ class Panda():
         self.recorded_traj = self.cart_pos
         self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
-        self.recorded_gripper= self.gripper_pos
+        self.recorded_gripper = self.gripper_pos
         
         # gets user imput using keyboard or gui
         self.end_demo_user_input()

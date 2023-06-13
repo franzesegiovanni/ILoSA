@@ -12,6 +12,9 @@ from ILoSA.panda import *
 from ILoSA.utils import * 
 from ILoSA.data_prep import * 
 import pickle
+
+import pathlib # checking and creating files for save()
+
 # class for storing different data types into one variable
 class Struct:
     pass
@@ -41,10 +44,12 @@ class ILoSA(Panda):
         self.theta_nullspace= 0
         # training data initialisation
         self.training_traj = []
+        self.training_ori = []
         self.training_delta = []
         self.training_dK = []
-        self.nullspace_traj=[]
-        self.nullspace_joints=[]
+        self.training_gripper = []
+        self.nullspace_traj = []
+        self.nullspace_joints = []
         
         # maximum force of the gradient
         self.max_grad_force = 20
@@ -82,14 +87,15 @@ class ILoSA(Panda):
         print('Recording ended.')
         # get user imput from keyboard or GUI 
         save_demo = self.save_demo_user_input() 
-        
-        if save_demo.lower()=='y':
-            if len(self.training_traj)==0:
-                self.training_traj=np.zeros((1,3))
-                self.training_delta=np.zeros((1,3))
-                self.training_dK=np.zeros((1,3))
-                self.training_ori=np.zeros((1,4))
-                self.training_gripper=np.zeros((1,1))
+
+        if save_demo.lower() == 'y':
+            if len(self.training_traj) == 0:
+                
+                self.training_traj = np.zeros((1,3))
+                self.training_delta = np.zeros((1,3))
+                self.training_dK = np.zeros((1,3))
+                self.training_ori = np.zeros((1,4))
+                self.training_gripper = np.zeros((1,1))
                 
                 self.recorded_traj=self.recorded_traj.transpose()
                 self.recorded_ori=self.recorded_ori.transpose()
@@ -111,7 +117,6 @@ class ILoSA(Panda):
                 self.training_delta=np.delete(self.training_delta,0,axis=0)
                 self.training_dK=np.delete(self.training_dK,0,axis=0)
                 self.training_gripper=np.delete(self.training_gripper,0, axis=0)
-
             else:
                 self.recorded_traj=self.recorded_traj.transpose()
                 self.recorded_ori=self.recorded_ori.transpose()
@@ -129,14 +134,30 @@ class ILoSA(Panda):
         else:
             print("Demo Discarded")
 
-    def Clear_Training_Data(self):
+    def clear_training_data(self):
+        # should del() these variables here instead of leaving it to the garbage collector
+        #del(self.training_traj) 
+        #del(self.training_ori) 
+        #del(self.training_delta)
+        #del(self.training_dK)
+        #del(self.training_gripper)
+
         self.training_traj = []
         self.training_ori  = []
         self.training_delta = []
         self.training_dK = []
+        self.training_gripper = []
 
-    def save(self, data='last'):
-        np.savez(str(pathlib.Path().resolve())+'/data/'+str(data)+'.npz', 
+    def save(self, file_name='last'):
+        folder = pathlib.Path().resolve() / 'data'
+        file_path = folder / (file_name + '.npz') 
+       
+        # Check if the folder exists and create it if not
+        if not folder.exists():
+            print('creating folder: %s'%folder)
+            folder.mkdir(parents=True, exist_ok=True) 
+        
+        np.savez(file_path.as_posix(), 
         nullspace_traj = self.nullspace_traj, 
         nullspace_joints = self.nullspace_joints, 
         training_traj = self.training_traj,
@@ -144,11 +165,16 @@ class ILoSA(Panda):
         training_delta = self.training_delta,
         training_gripper = self.training_gripper,
         training_dK = self.training_dK)
-        print(np.shape(self.training_ori))
-        print(np.shape(self.training_traj))  
 
-    def load(self, file='last'):
-        data =np.load(str(pathlib.Path().resolve())+'/data/'+str(file)+'.npz')
+    def load(self, file_name='last'):
+        file_path = pathlib.Path().resolve() / 'data' / (file_name + '.npz') 
+        
+        # Check if the file exists 
+        if not file_path.exists():
+            print('File %s does noe exists. Doing nothing.'%file_Path)
+            return
+
+        data = np.load(str(pathlib.Path().resolve())+'/data/'+str(file_name)+'.npz')
 
         self.nullspace_traj = data['nullspace_traj']
         self.nullspace_joints = data['nullspace_joints']
@@ -160,9 +186,7 @@ class ILoSA(Panda):
         self.nullspace_traj = self.nullspace_traj
         self.nullspace_joints = self.nullspace_joints
         self.training_traj = self.training_traj
-        # print(np.shape(self.training_traj))
         self.training_ori = self.training_ori
-        # print(np.shape(self.training_ori))
         self.training_delta = self.training_delta
         self.training_dK = self.training_dK
 
