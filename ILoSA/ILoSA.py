@@ -15,9 +15,6 @@ import pickle
 
 import pathlib # checking and creating files for save()
 
-# Gaussian processess kernels
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel as C
-
 # class for storing different data types into one variable
 class Struct:
     pass
@@ -203,7 +200,10 @@ class ILoSA(Panda):
             print("Training of Delta")
             kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.2]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
             self.Delta=InteractiveGP(X=self.training_traj, Y=self.training_delta, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
+            print('fitting')
             self.Delta.fit()
+            
+            print('presave: ', 'models/'+model_name+'/delta.pkl')
             with open('models/'+model_name+'/delta.pkl','wb') as delta:
                 pickle.dump(self.Delta,delta)
 
@@ -268,7 +268,7 @@ class ILoSA(Panda):
             alpha[i]=self.max_grad_force/ np.sqrt(dSigma_dx**2+dSigma_dy**2+dSigma_dz**2)
             self.alpha=np.min(alpha)
 
-    def Interactive_Control(self, verboose=False):
+    def Interactive_Control(self, verbose=False):
         r = rospy.Rate(self.control_freq)
         self.find_alpha()
         
@@ -345,7 +345,7 @@ class ILoSA(Panda):
             pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
             rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]#[self.K_ori, self.K_ori, self.K_ori]
             self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
-            if verboose :
+            if verbose :
                 print("Delta")
                 print(self.delta)
                 print("Stabilization field")

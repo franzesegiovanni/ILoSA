@@ -134,4 +134,3 @@ class InteractiveGP():
     def is_uncertain(self,theta):
         uncertain = (self.sigma - self.noise_var_)/(self.max_var - self.noise_var_) > theta
         return uncertain
-

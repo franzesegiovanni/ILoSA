@@ -295,6 +295,7 @@ class Panda():
         while vel < trigger:
             vel = math.sqrt((self.cart_pos[0]-init_pos[0])**2 + (self.cart_pos[1]-init_pos[1])**2 + (self.cart_pos[2]-init_pos[2])**2)
 
+        # TODO: The initial pose is added twice, this shouldbe be init with an empty array. I tries but it broke ILoSA, I will leave as it is and ignore. 
         self.recorded_traj = self.cart_pos
         self.recorded_ori  = self.cart_ori
         self.recorded_joint= self.joint_pos
@@ -307,7 +308,7 @@ class Panda():
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
-            
+            r.sleep() 
         print('Kinesthetic Demo ended')
         return
 
