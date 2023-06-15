@@ -15,6 +15,9 @@ import pickle
 
 import pathlib # checking and creating files for save()
 
+# Gaussian processess kernels
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel as C
+
 # class for storing different data types into one variable
 class Struct:
     pass
@@ -190,25 +193,33 @@ class ILoSA(Panda):
         self.training_delta = self.training_delta
         self.training_dK = self.training_dK
 
-    def Train_GPs(self):
+    def Train_GPs(self, model_name='.'):
+        # Check if folder exists and create it if needed
+        folder = pathlib.Path('./models')/model_name
+        if not folder.is_dir():
+            folder.mkdir(parents=True, exist_ok=True)
+
         if len(self.training_traj)>0 and len(self.training_delta)>0:
             print("Training of Delta")
             kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.2]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
             self.Delta=InteractiveGP(X=self.training_traj, Y=self.training_delta, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
             self.Delta.fit()
-            with open('models/delta.pkl','wb') as delta:
+            with open('models/'+model_name+'/delta.pkl','wb') as delta:
                 pickle.dump(self.Delta,delta)
 
         else:
+            # I do not understand why this is a type error?
             raise TypeError("There are no data for learning a trajectory dynamical system")
-        with open('models/delta.pkl','wb') as delta:
-            pickle.dump(self.Delta,delta)
+        
+        ## This is repeated inside the IF clause
+        #with open('models/delta.pkl','wb') as delta:
+        #    pickle.dump(self.Delta,delta)
 
         if len(self.training_traj)>0 and len(self.training_dK)>0:
             print("Training of Stiffness")
             self.Stiffness=InteractiveGP(X=self.training_traj, Y=self.training_dK, y_lim=[self.K_min, self.K_max], kernel=self.Delta.kernel_, n_restarts_optimizer=0) 
             self.Stiffness.fit()
-            with open('models/stiffness.pkl','wb') as stiffness:
+            with open('models/'+model_name+'/stiffness.pkl','wb') as stiffness:
                 pickle.dump(self.Stiffness,stiffness)
         else:
             raise TypeError("There are no data for learning a stiffness dynamical system")
@@ -218,33 +229,33 @@ class ILoSA(Panda):
             kernel = C(constant_value = 0.1, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.1]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
             self.NullSpaceControl=InteractiveGP(X=self.nullspace_traj, Y=self.nullspace_joints, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
             self.NullSpaceControl.fit()
-            with open('models/nullspace.pkl','wb') as nullspace:
+            with open('models/'+model_name+'/nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
         else: 
             print('No Null Space Control Policy Learned')    
     
-    def save_models(self):
-        with open('models/delta.pkl','wb') as delta:
+    def save_models(self, model_name):
+        with open('models/'+model_name+'/delta.pkl','wb') as delta:
             pickle.dump(self.Delta,delta)
-        with open('models/stiffness.pkl','wb') as stiffness:
+        with open('models/'+model_name+'/stiffness.pkl','wb') as stiffness:
             pickle.dump(self.Stiffness,stiffness)
         if self.NullSpaceControl:
-            with open('models/nullspace.pkl','wb') as nullspace:
+            with open('models/'+model_name+'/nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
 
-    def load_models(self):
+    def load_models(self, model_name):
         try:
-            with open('models/delta.pkl', 'rb') as delta:
+            with open('models/'+model_name+'/delta.pkl', 'rb') as delta:
                 self.Delta = pickle.load(delta)
         except:
             print("No delta model saved")
         try:
-            with open('models/stiffness.pkl', 'rb') as stiffness:
+            with open('models/'+model_name+'/stiffness.pkl', 'rb') as stiffness:
                 self.Stiffness = pickle.load(stiffness)
         except:
             print("No stiffness model saved")
         try:
-            with open('models/nullspace.pkl', 'rb') as nullspace:
+            with open('models/'+model_name+'/nullspace.pkl', 'rb') as nullspace:
                 self.NullSpace = pickle.load(nullspace)
         except:
             print("No NullSpace model saved")
