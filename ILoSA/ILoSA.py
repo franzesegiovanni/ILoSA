@@ -12,9 +12,6 @@ from ILoSA.panda import *
 from ILoSA.utils import *
 from ILoSA.data_prep import *
 import pickle
-# class for storing different data types into one variable
-class Struct:
-    pass
 
 class ILoSA(Panda):
     def __init__(self):
@@ -50,6 +47,8 @@ class ILoSA(Panda):
         self.max_grad_force = 20
 
         self.NullSpaceControl=None
+
+        self.r=rospy.Rate(self.control_freq)
 
     def Record_NullSpace(self):
         self.Kinesthetic_Demonstration()
@@ -166,20 +165,13 @@ class ILoSA(Panda):
             kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.2]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
             self.Delta=InteractiveGP(X=self.training_traj, Y=self.training_delta, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
             self.Delta.fit()
-            with open('models/delta.pkl','wb') as delta:
-                pickle.dump(self.Delta,delta)
-
         else:
             raise TypeError("There are no data for learning a trajectory dynamical system")
-        with open('models/delta.pkl','wb') as delta:
-            pickle.dump(self.Delta,delta)
 
         if len(self.training_traj)>0 and len(self.training_dK)>0:
             print("Training of Stiffness")
-            self.Stiffness=InteractiveGP(X=self.training_traj, Y=self.training_dK, y_lim=[self.K_min, self.K_max], kernel=self.Delta.kernel_, n_restarts_optimizer=0) 
+            self.Stiffness=InteractiveGP(X=self.training_traj, Y=self.training_dK, y_lim=[self.K_min, self.K_max], kernel=self.Delta.kernel_,optimizer=None) 
             self.Stiffness.fit()
-            with open('models/stiffness.pkl','wb') as stiffness:
-                pickle.dump(self.Stiffness,stiffness)
         else:
             raise TypeError("There are no data for learning a stiffness dynamical system")
 
@@ -188,10 +180,10 @@ class ILoSA(Panda):
             kernel = C(constant_value = 0.1, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.1]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
             self.NullSpaceControl=InteractiveGP(X=self.nullspace_traj, Y=self.nullspace_joints, y_lim=[-self.attractor_lim, self.attractor_lim], kernel=kernel, n_restarts_optimizer=20)
             self.NullSpaceControl.fit()
-            with open('models/nullspace.pkl','wb') as nullspace:
-                pickle.dump(self.NullSpaceControl,nullspace)
         else: 
-            print('No Null Space Control Policy Learned')    
+            print('No Null Space Control Policy Learned')  
+
+
     def save_models(self):
         with open('models/delta.pkl','wb') as delta:
             pickle.dump(self.Delta,delta)
@@ -200,6 +192,7 @@ class ILoSA(Panda):
         if self.NullSpaceControl:
             with open('models/nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
+
     def load_models(self):
         try:
             with open('models/delta.pkl', 'rb') as delta:
@@ -216,6 +209,7 @@ class ILoSA(Panda):
                 self.NullSpace = pickle.load(nullspace)
         except:
             print("No NullSpace model saved")
+
     def find_alpha(self):
         alpha=np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
@@ -224,67 +218,71 @@ class ILoSA(Panda):
             alpha[i]=self.max_grad_force/ np.sqrt(dSigma_dx**2+dSigma_dy**2+dSigma_dz**2)
             self.alpha=np.min(alpha)
 
-    def Interactive_Control(self, verboose=False):
-        r=rospy.Rate(self.control_freq)
-        self.find_alpha()
+    def step(self):
+        # read the actual position of the robot
+
+        cart_pos=np.array(self.cart_pos).reshape(1,-1)
+        # GP predictions Delta_x
+        [self.delta, self.sigma, index_max_k_star]=self.Delta.predict(cart_pos)
+
+        # GP prediction K stiffness
+        [self.dK, _, _]=self.Stiffness.predict(cart_pos, return_std=False)
+
+        self.delta = np.clip(self.delta[0], -self.attractor_lim, self.attractor_lim)
+
+        self.dK = np.clip(self.dK[0], self.dK_min, self.dK_max)
+
+        dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(cart_pos)
+        
+        self.f_stable=-self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
+
+        self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
+
+        
+        if any(np.abs(np.array(self.feedback)) > 0.05): # this avoids to activate the feedback on noise joystick
+
+            print("Received Feedback")
+            delta_inc, dK_inc = Interpret_3D(feedback=self.feedback, delta=self.delta, K=self.K_tot, delta_lim=self.attractor_lim, K_mean=self.K_mean)
+            print('delta_inc')
+            print(delta_inc)
+            print("dK_inc")
+            print(dK_inc)
+            is_uncertain=self.Delta.is_uncertain(theta=self.theta)
+            self.Delta.update_with_k(x=cart_pos, mu=self.delta, epsilon_mu=delta_inc, is_uncertain=is_uncertain)
+            self.Stiffness.update_with_k(x=cart_pos, mu=self.dK, epsilon_mu=dK_inc, is_uncertain=is_uncertain)
+    
+        
+        self.delta, self.K_tot = Force2Impedance(self.delta, self.K_tot, self.f_stable, self.attractor_lim)
+        self.K_tot=[self.K_tot]
+        K_ori_scaling=self.K_ori
+        self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
+        if self.sigma / self.Delta.max_var > self.theta_stiffness: 
+            self.K_tot=self.K_tot*self.scaling_factor
+            K_ori_scaling= self.K_ori*self.scaling_factor
+        x_new = cart_pos[0][0] + self.delta[0]  
+        y_new = cart_pos[0][1] + self.delta[1]  
+        z_new = cart_pos[0][2] + self.delta[2]  
+
+        quat_goal=self.training_ori[index_max_k_star,:]
+        gripper_goal=self.training_gripper[index_max_k_star,0]
+
+        quat_goal=slerp_sat(self.cart_ori, quat_goal, 0.1)
+
+        pos_goal=[x_new, y_new, z_new]
+        self.set_attractor(pos_goal,quat_goal)
+        self.move_gripper(gripper_goal)
+        #self.grasp_gripper(gripper_goal)
+        
+        pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
+        rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
+        self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+
+    def Interactive_Control(self):
         print("Press e to stop.")
         self.end=False
         while not self.end:
-            # read the actual position of the robot
-
-            cart_pos=np.array(self.cart_pos).reshape(1,-1)
-            # GP predictions Delta_x
-            [self.delta, self.sigma, index_max_k_star]=self.Delta.predict(cart_pos)
-
-            # GP prediction K stiffness
-            [self.dK, _, _]=self.Stiffness.predict(cart_pos, return_std=False)
-  
-            self.delta = np.clip(self.delta[0], -self.attractor_lim, self.attractor_lim)
-
-            self.dK = np.clip(self.dK[0], self.dK_min, self.dK_max)
-
-            dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(cart_pos)
+            self.step()
             
-            f_stable=-self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
-
-            self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
-
-            
-            if any(np.abs(np.array(self.feedback)) > 0.05): # this avoids to activate the feedback on noise joystick
-
-                print("Received Feedback")
-                delta_inc, dK_inc = Interpret_3D(feedback=self.feedback, delta=self.delta, K=self.K_tot, delta_lim=self.attractor_lim, K_mean=self.K_mean)
-                print('delta_inc')
-                print(delta_inc)
-                print("dK_inc")
-                print(dK_inc)
-                is_uncertain=self.Delta.is_uncertain(theta=self.theta)
-                self.Delta.update_with_k(x=cart_pos, mu=self.delta, epsilon_mu=delta_inc, is_uncertain=is_uncertain)
-                self.Stiffness.update_with_k(x=cart_pos, mu=self.dK, epsilon_mu=dK_inc, is_uncertain=is_uncertain)
-        
-            
-            self.delta, self.K_tot = Force2Impedance(self.delta, self.K_tot, f_stable, self.attractor_lim)
-            self.K_tot=[self.K_tot]
-            K_ori_scaling=self.K_ori
-            self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
-            if self.sigma / self.Delta.max_var > self.theta_stiffness: 
-                self.K_tot=self.K_tot*self.scaling_factor
-                K_ori_scaling= self.K_ori*self.scaling_factor
-            x_new = cart_pos[0][0] + self.delta[0]  
-            y_new = cart_pos[0][1] + self.delta[1]  
-            z_new = cart_pos[0][2] + self.delta[2]  
-
-            quat_goal=self.training_ori[index_max_k_star,:]
-            gripper_goal=self.training_gripper[index_max_k_star,0]
-
-            quat_goal=slerp_sat(self.cart_ori, quat_goal, 0.1)
-
-            pos_goal=[x_new, y_new, z_new]
-            self.set_attractor(pos_goal,quat_goal)
-            self.move_gripper(gripper_goal)
-            #self.grasp_gripper(gripper_goal)
-            null_stiff = [0]
-
             if self.NullSpaceControl:
                 [self.equilibrium_configuration, self.sigma_null_space]=self.NullSpaceControl.predict(np.array(pos_goal).reshape(1,-1))
                 self.scaling_factor_ns = (1-self.sigma_null_space / self.NullSpaceControl.max_var) / (1 - self.theta_nullspace)
@@ -295,16 +293,6 @@ class ILoSA(Panda):
                     self.null_stiff=self.K_null      
                 self.set_configuration(self.equilibrium_configuration[0])
                 null_stiff = [self.null_stiff]
-            
-            pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
-            rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]#[self.K_ori, self.K_ori, self.K_ori]
-            self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
-            if verboose :
-                print("Delta")
-                print(self.delta)
-                print("Stabilization field")
-                print(f_stable)
-                print("Scaling_factor_cartesian:" + str(self.scaling_factor))
-                print("Scaling_factor_nullspace:" + str(self.scaling_factor_ns))   
-            r.sleep()
+
+            self.r.sleep()
 
