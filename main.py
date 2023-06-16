@@ -41,6 +41,7 @@ if __name__ == '__main__':
     print("Train the Gaussian Process Models")
     ILoSA.Train_GPs()
     ILoSA.save_models()
+    ILoSA.find_alpha()
     #%%
     time.sleep(1)
     print("Reset to the starting cartesian position")

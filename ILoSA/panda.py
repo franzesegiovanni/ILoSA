@@ -50,6 +50,7 @@ class Panda():
         
         self.end = False
         self.use_kb = True
+        self.received = None 
         if 'use_kb' in kwargs:
             self.use_kb = kwargs['use_kb']
 
@@ -74,7 +75,6 @@ class Panda():
         self.end = False
         # ask the main thread to create the "end demo" window
         self.signals.get_end_demo.emit()
-        self.received = None 
     
     def receive(self, data):
         print('panda received %s from main thread'%data)
