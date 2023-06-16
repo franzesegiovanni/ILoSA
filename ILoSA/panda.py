@@ -94,7 +94,6 @@ class Panda():
         self.stop_pub.publish(self.stop_command)    
 
     def connect_ROS(self):
-        self.r=rospy.Rate(self.control_freq)
 
         rospy.Subscriber("/cartesian_pose", PoseStamped, self.ee_pose_callback)
         rospy.Subscriber("/spacenav/offset", Vector3, self.teleop_callback)
@@ -143,6 +142,8 @@ class Panda():
 
 
     def go_to_pose(self, goal_pose):
+
+        r=rospy.Rate(100)
         # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()
         start = self.cart_pos
         start_ori=self.cart_ori
@@ -150,16 +151,16 @@ class Panda():
         # interpolate from start to goal with attractor distance of approx 1 mm
         squared_dist = np.sum(np.subtract(start, goal_)**2, axis=0)
         dist = np.sqrt(squared_dist)
-        print("dist", dist)
+        # e("dist", dist)
         interp_dist = 0.001  # [m]
         step_num_lin = math.floor(dist / interp_dist)
 
         
-        print("num of steps linear", step_num_lin)
+        # print("num of steps linear", step_num_lin)
         
         
         q_start=np.quaternion(start_ori[0], start_ori[1], start_ori[2], start_ori[3])
-        print("q_start", q_start)
+        # print("q_start", q_start)
         q_goal=np.quaternion(goal_pose.pose.orientation.w, goal_pose.pose.orientation.x, goal_pose.pose.orientation.y, goal_pose.pose.orientation.z)
         inner_prod=q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
         if inner_prod < 0:
@@ -169,16 +170,16 @@ class Panda():
             q_start.w=-q_start.w
         inner_prod=q_start.x*q_goal.x+q_start.y*q_goal.y+q_start.z*q_goal.z+q_start.w*q_goal.w
         theta= np.arccos(np.abs(inner_prod))
-        print(theta)
+        # print(theta)
         interp_dist_polar = 0.001 
         step_num_polar = math.floor(theta / interp_dist_polar)
 
         
-        print("num of steps polar", step_num_polar)
+        # print("num of steps polar", step_num_polar)
         
         step_num=np.max([step_num_polar,step_num_lin])
         
-        print("num of steps max", step_num)
+        # print("num of steps max", step_num)
         x = np.linspace(start[0], goal_pose.pose.position.x, step_num)
         y = np.linspace(start[1], goal_pose.pose.position.y, step_num)
         z = np.linspace(start[2], goal_pose.pose.position.z, step_num)
@@ -221,11 +222,10 @@ class Panda():
             goal.pose.orientation.z = quat.z
             goal.pose.orientation.w = quat.w
             self.goal_pub.publish(goal)
-            self.r.sleep()   
+            r.sleep()   
 
         
     def Kinesthetic_Demonstration(self, trigger=0.005): 
-        r=rospy.Rate(self.rec_freq)
         self.Passive()
 
         self.end = False
@@ -248,7 +248,7 @@ class Panda():
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
 
-            r.sleep()
+            self.r_rec.sleep()
         
             
 
