@@ -7,3 +7,4 @@
 example/.ipynb_checkpoints/Gaussian Process Dynamical System -checkpoint.ipynb
 ILoSA.egg-info/
 build/
+models/
