@@ -11,23 +11,14 @@ import numpy as np
 import time
 import pandas as pd
 import quaternion
+
+# ROS msgs
 from sensor_msgs.msg import JointState, Joy
 from geometry_msgs.msg import Point, WrenchStamped, PoseStamped, Vector3
 from franka_gripper.msg import GraspActionGoal, HomingActionGoal, StopActionGoal, MoveActionGoal
 from std_msgs.msg import Float32MultiArray
-from sys import exit
-
-# input stuff
-from pynput.keyboard import Listener, KeyCode
-from PyQt5.QtWidgets import QWidget, QMessageBox
-from PyQt5.QtCore import QObject, pyqtSignal
-
-class GuiSignals(QObject):
-    get_end_demo = pyqtSignal()
-    get_save_demo = pyqtSignal()
 
 class Panda():
-
     def __init__(self, *args, **kwargs):
         super(Panda,self).__init__()
         self.control_freq = 100 # [Hz]
@@ -49,52 +40,6 @@ class Panda():
         self.grasp_command.goal.width = 1
         
         self.end = False
-        self.use_kb = True
-        self.received = None 
-        if 'use_kb' in kwargs:
-            self.use_kb = kwargs['use_kb']
-
-        if self.use_kb:
-            self.end_demo_user_input = self.kb_end_demo
-            self.save_demo_user_input = self.kb_save_demo
-        else:
-            self.signals = GuiSignals()
-            self.end_demo_user_input = self.request_end_demo_window
-            self.save_demo_user_input = self.request_save_demo_window
-    def kb_end_demo(self):
-        print("Recording started. Press e to stop.")
-        self.end = False
-        self.listener = Listener(on_press = self._on_press)
-        self.listener.start()
-        return
-   
-    def kb_save_demo(self):
-        return input("Do you want to keep this demonstration? [y/n] \n")
-    
-    def request_end_demo_window(self):
-        self.end = False
-        # ask the main thread to create the "end demo" window
-        self.signals.get_end_demo.emit()
-    
-    def receive(self, data):
-        print('panda received %s from main thread'%data)
-        self.received = data
-        return
-
-    def request_save_demo_window(self):
-        # Ask the main thread to create the "save demo" window
-        self.signals.get_save_demo.emit()
-        while self.received == None:
-            print("I am waiting....")
-            time.sleep(1)
-        return self.received
-
-    def _on_press(self, key):
-        # This function runs on the background and checks if a keyboard key was pressed
-        if key == KeyCode.from_char('e'):
-            self.end = True
-            self.listener.stop()
-            return False
 
     def ee_pose_callback(self, data):
         self.cart_pos = np.array([data.pose.position.x, data.pose.position.y, data.pose.position.z])
@@ -319,8 +264,15 @@ class Panda():
         self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
 
 if __name__ == '__main__':
+    # User interface
+    from user_interfaces import KBUI, GUI
+
+    class My_Panda(Panda,KBUI):
+        def __init__(self):
+           super(My_Panda, self).__init__()
+
     rospy.sleep(1)
-    panda = Panda()
+    panda = My_Panda()
     rospy.init_node('Panda', anonymous=False)
     panda.connect_ROS()
     rospy.on_shutdown(panda.disconnect_ROS) 

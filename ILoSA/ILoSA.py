@@ -7,13 +7,14 @@ This code is part of TERI (TEaching Robots Interactively) project
 #!/usr/bin/env python
 import numpy as np
 import pandas as pd
+import pickle # dump data to files
+import pathlib # checking and creating files for save()
+
+# Things from this package
 from ILoSA.gaussian_process import * 
 from ILoSA.panda import * 
 from ILoSA.utils import * 
 from ILoSA.data_prep import * 
-import pickle
-
-import pathlib # checking and creating files for save()
 
 class ILoSA(Panda):
     def __init__(self, *args, **kwargs):
@@ -217,12 +218,19 @@ class ILoSA(Panda):
             print('No Null Space Control Policy Learned')    
     
     def save_models(self, model_name):
-        with open('models/'+model_name+'/delta.pkl','wb') as delta:
+        folder = pathlib.Path('./models/'+model_name)
+        
+        # Check if the folder exists and create it if not
+        if not folder.exists():
+            print('creating folder: %s'%folder)
+            folder.mkdir(parents=True, exist_ok=True) 
+
+        with open(folder/'delta.pkl','wb') as delta:
             pickle.dump(self.Delta,delta)
-        with open('models/'+model_name+'/stiffness.pkl','wb') as stiffness:
+        with open(folder/'stiffness.pkl','wb') as stiffness:
             pickle.dump(self.Stiffness,stiffness)
         if self.NullSpaceControl:
-            with open('models/'+model_name+'/nullspace.pkl','wb') as nullspace:
+            with open(folder/'nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
 
     def load_models(self, model_name):
@@ -330,9 +338,16 @@ class ILoSA(Panda):
             self.r_control.sleep()
 
 if __name__ == '__main__':
+    # User interface
+    from user_interfaces import KBUI, GUI # User interface
+    
+    class My_ILoSA(ILoSA,GUI):
+        def __init__(self):
+           super(My_ILoSA, self).__init__()
+
     rospy.sleep(1)
-    ilosa = ILoSA()
     rospy.init_node('ILoSA', anonymous=False)
+    ilosa = My_ILoSA()
     ilosa.connect_ROS()
     rospy.on_shutdown(ilosa.disconnect_ROS)
 
