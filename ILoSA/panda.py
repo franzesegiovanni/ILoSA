@@ -201,6 +201,8 @@ class Panda():
 
 
     def go_to_pose(self, goal_pose):
+
+        r=rospy.Rate(100)
         # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()
         start = self.cart_pos
         start_ori = self.cart_ori
@@ -210,11 +212,10 @@ class Panda():
         # dist = np.linalg.norm(goal-start)
         squared_dist = np.sum(np.subtract(start, goal_)**2, axis=0)
         dist = np.sqrt(squared_dist)
-        print("dist", dist)
-
+        # e("dist", dist)
         interp_dist = 0.001  # [m]
         step_num_lin = math.floor(dist / interp_dist)
-        print("num of steps linear", step_num_lin)
+        # print("num of steps linear", step_num_lin)
 
         q_start = np.quaternion(start_ori[0], start_ori[1], start_ori[2], start_ori[3])
         #print("q_start", q_start)
@@ -238,7 +239,7 @@ class Panda():
         
         step_num=np.max([step_num_polar,step_num_lin])
         
-        print("num of steps max", step_num)
+        # print("num of steps max", step_num)
         x = np.linspace(start[0], goal_pose.pose.position.x, step_num)
         y = np.linspace(start[1], goal_pose.pose.position.y, step_num)
         z = np.linspace(start[2], goal_pose.pose.position.z, step_num)
@@ -282,11 +283,10 @@ class Panda():
             goal.pose.orientation.z = quat.z
             goal.pose.orientation.w = quat.w
             self.goal_pub.publish(goal)
-            self.r.sleep()   
+            r.sleep()   
 
         
     def Kinesthetic_Demonstration(self, trigger=0.005): 
-        r=rospy.Rate(self.rec_freq)
         self.Passive()
         
         init_pos = self.cart_pos
@@ -308,7 +308,7 @@ class Panda():
             self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
             self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
             self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
-            r.sleep() 
+            self.r_rec.sleep()
         print('Kinesthetic Demo ended')
         return
 

@@ -27,6 +27,7 @@ class ILoSA(Panda):
         self.dK_min = 0.0
         self.dK_max = self.K_max-self.K_mean
         self.K_null=5
+        self.null_stiff=[0.0]
         # maximum attractor distance along each axis
         self.attractor_lim = 0.04
         self.scaling_factor=1
@@ -52,7 +53,8 @@ class ILoSA(Panda):
 
         self.NullSpaceControl=None
 
-        self.r=rospy.Rate(self.control_freq)
+        self.r_rec=rospy.Rate(self.rec_freq)
+        self.r_control=rospy.Rate(self.control_freq)
 
     def Record_NullSpace(self):
         self.Kinesthetic_Demonstration()
@@ -305,15 +307,13 @@ class ILoSA(Panda):
 
         pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
         rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
-        self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+        self.set_stiffness(pos_stiff, rot_stiff, self.null_stiff)
     
     def Interactive_Control(self):
         print("Press e to stop.")
         self.end_demo_user_input()
 
         while not self.end:
-            self.step()
-
             if self.NullSpaceControl:
                 [self.equilibrium_configuration, self.sigma_null_space]=self.NullSpaceControl.predict(np.array(pos_goal).reshape(1,-1))
                 self.scaling_factor_ns = (1-self.sigma_null_space / self.NullSpaceControl.max_var) / (1 - self.theta_nullspace)
@@ -324,7 +324,10 @@ class ILoSA(Panda):
                     self.null_stiff=self.K_null      
                 self.set_configuration(self.equilibrium_configuration[0])
                 null_stiff = [self.null_stiff]
-            self.r.sleep()
+
+            self.step()    
+
+            self.r_control.sleep()
 
 if __name__ == '__main__':
     rospy.sleep(1)

@@ -12,7 +12,7 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel as
 
 
 class InteractiveGP():
-    def __init__(self, X, Y, kernel, y_lim, alpha=1e-10, n_restarts_optimizer=20):
+    def __init__(self, X, Y, kernel, y_lim, alpha=1e-10, n_restarts_optimizer=10, optimizer="fmin_l_bfgs_b"):
         self.y_lim=y_lim
         self.X=X
         print("Shape X for gaussian Process")
@@ -20,7 +20,7 @@ class InteractiveGP():
         self.Y=Y
         print("Shape Y for gaussian Process")
         print(np.shape(self.Y))
-        self.gp = GaussianProcessRegressor(kernel=kernel, alpha=alpha, n_restarts_optimizer=n_restarts_optimizer)
+        self.gp = GaussianProcessRegressor(kernel=kernel, alpha=alpha, optimizer=optimizer, n_restarts_optimizer=n_restarts_optimizer)
 
     
     def fit(self):
