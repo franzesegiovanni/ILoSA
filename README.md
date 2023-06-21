@@ -5,7 +5,7 @@ Giovanni Franzese<sup>∗</sup>, Anna Mészáros, Luka Peternel, and Jens Kober
 
 **Winner** of BEST LATE BREAKING RESULTS POSTER AWARD in 2021 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM 2021)
 
-**Full paper** is publically available at https://arxiv.org/abs/2103.03099
+**Full paper** is publically [available](https://arxiv.org/abs/2103.03099).
 
 ## What is ILoSA? 
 
@@ -20,6 +20,9 @@ ILoSA has shown to be effective in different challenging tasks, such as pushing 
 
 With this we invite you all to try ILoSA out for yourselves, to expand it to other tasks challenging not only for robots but maybe even humans as well and keep pushing the capabilities of robot learning further.
 
+### Interested also in learning and controlling the end-effector orientation? Then read: 
+[Learning to Pick at Non-Zero-Velocity from
+Interactive Demonstrations](https://arxiv.org/pdf/2110.04534v2.pdf) and go to the following [branch](https://github.com/franzesegiovanni/ILoSA/tree/MUDS) for a simpler implementation of what is presented in the paper. 
 
 # How to run the code on a Franka Emika Panda
 To install:
@@ -48,6 +51,19 @@ If you found ILoSA useful for your research, please cite it as:
   pages={7778--7785},
   year={2021},
   organization={IEEE}
+}
+```
+or cite the paper on picking at non-zero velocity: 
+```
+@article{meszaros2022learning,
+  title={Learning to Pick at Non-Zero-Velocity From Interactive Demonstrations},
+  author={M{\'e}sz{\'a}ros, Anna and Franzese, Giovanni and Kober, Jens},
+  journal={IEEE Robotics and Automation Letters},
+  volume={7},
+  number={3},
+  pages={6052--6059},
+  year={2022},
+  publisher={IEEE}
 }
 ```
 
