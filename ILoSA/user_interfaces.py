@@ -8,6 +8,10 @@ import time
 # This method must be implemented on the inheriting class
 # See user_interfaces.py for Keyboard and GUI implementations 
 class Base_UI():
+    def __init__(self):
+        super().__init__()
+        return
+
     def end_demo_user_input(self):
         raise NotImplementedError()
 
@@ -45,7 +49,7 @@ class GuiSignals(QObject):
 
 class GUI(Base_UI):
     def __init__(self):
-        print('initing GUI')
+        print('initing GUI signals')
         super(GUI, self).__init__()
         self.received = None
         self.signals = GuiSignals()

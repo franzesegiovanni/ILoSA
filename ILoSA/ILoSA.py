@@ -17,8 +17,8 @@ from ILoSA.utils import *
 from ILoSA.data_prep import * 
 
 class ILoSA(Panda):
-    def __init__(self, *args, **kwargs):
-        super(ILoSA,self).__init__(*args, **kwargs)
+    def __init__(self):
+        super(ILoSA, self).__init__()
         self.rec_freq = 10  # [Hz]
 
         # stiffness parameters

@@ -19,7 +19,7 @@ from franka_gripper.msg import GraspActionGoal, HomingActionGoal, StopActionGoal
 from std_msgs.msg import Float32MultiArray
 
 class Panda():
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         super(Panda,self).__init__()
         self.control_freq = 100 # [Hz]
         
@@ -265,9 +265,9 @@ class Panda():
 
 if __name__ == '__main__':
     # User interface
-    from user_interfaces import KBUI, GUI
+    from user_interfaces import KBUI
 
-    class My_Panda(Panda,KBUI):
+    class My_Panda(Panda, KBUI):
         def __init__(self):
            super(My_Panda, self).__init__()
 
