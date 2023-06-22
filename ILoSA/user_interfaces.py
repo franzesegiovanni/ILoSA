@@ -21,7 +21,7 @@ class Base_UI():
 class KBUI(Base_UI):
     def __init__(self):
         print('initing keyboard UI')
-        super(GUI, self).__init__()
+        super(KBUI, self).__init__()
         return
 
     def end_demo_user_input(self):
