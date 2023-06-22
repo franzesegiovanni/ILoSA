@@ -172,7 +172,7 @@ class ILoSA(Panda):
         
         # Check if the file exists 
         if not file_path.exists():
-            print('File %s does noe exists. Doing nothing.'%file_Path)
+            print('File %s does noe exists. Doing nothing.'%file_path)
             return
 
         data = np.load(str(pathlib.Path().resolve())+'/data/'+str(file_name)+'.npz')
