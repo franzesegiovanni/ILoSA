@@ -57,15 +57,10 @@ class ILoSA(Panda):
 
         if save_demo.lower()=='y':
             if len(self.nullspace_traj)==0:
-                self.nullspace_traj=np.zeros((3,1))
-                self.nullspace_joints=np.zeros((7,1))
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj.transpose() ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint.transpose() ), axis=1)
-                self.nullspace_traj=np.delete(self.nullspace_traj, 0,1)
-                self.nullspace_joints=np.delete(self.nullspace_joints,0,1)
-            else:
-                self.nullspace_traj=np.concatenate((self.nullspace_traj,self.recorded_traj ), axis=1)
-                self.nullspace_joints=np.concatenate((self.nullspace_joints,self.recorded_joint ), axis=1)
+                self.nullspace_traj=np.empty((1,3))
+                self.nullspace_joints=np.empty((1,7))
+            self.nullspace_traj=np.vstack([self.nullspace_traj,self.recorded_traj])
+            self.nullspace_joints=np.vstack([self.nullspace_joints,self.recorded_joint])
 
             print("Demo Saved")
         else:
@@ -78,46 +73,24 @@ class ILoSA(Panda):
         save_demo = input("Do you want to keep this demonstration? [y/n] \n")
         if save_demo.lower()=='y':
             if len(self.training_traj)==0:
-                self.training_traj=np.zeros((1,3))
-                self.training_delta=np.zeros((1,3))
-                self.training_dK=np.zeros((1,3))
-                self.training_ori=np.zeros((1,4))
-                self.training_gripper=np.zeros((1,1))
+                self.training_traj=np.empty((0,3))
+                self.training_delta=np.empty((0,3))
+                self.training_dK=np.empty((0,3))
+                self.training_ori=np.empty((0,4))
+                self.training_gripper=np.empty((0,1))
+
+            self.training_traj=np.vstack([self.training_traj,self.recorded_traj])
+            self.training_ori=np.vstack([self.training_ori,self.recorded_ori])
+            self.training_gripper=np.vstack([self.training_gripper,self.recorded_gripper])
+
+            self.training_stiff_ori=np.zeros_like(self.training_ori)
+            self.training_stiff_ori[:,0]=1
+
+            delta_x=resample(self.recorded_traj, step=2)
+            self.training_delta=np.vstack([self.training_delta,delta_x])
+
+            self.training_dK=np.vstack([self.training_dK,np.zeros(np.shape(self.recorded_traj))])
                 
-                self.recorded_traj=self.recorded_traj.transpose()
-                self.recorded_ori=self.recorded_ori.transpose()
-                self.recorded_joint=self.recorded_joint.transpose()
-                self.recorded_gripper=self.recorded_gripper.transpose()
-
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
-                self.training_ori=np.concatenate((self.training_ori,self.recorded_ori), axis=0)
-                self.training_gripper=np.concatenate((self.training_gripper,self.recorded_gripper), axis=0)
-
-                delta_x=resample(self.recorded_traj, step=2)
-                self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
-
-                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
-                
-                
-                self.training_traj=np.delete(self.training_traj, 0,axis=0)
-                self.training_ori=np.delete(self.training_ori, 0,axis=0)
-                self.training_delta=np.delete(self.training_delta,0,axis=0)
-                self.training_dK=np.delete(self.training_dK,0,axis=0)
-                self.training_gripper=np.delete(self.training_gripper,0, axis=0)
-
-            else:
-                self.recorded_traj=self.recorded_traj.transpose()
-                self.recorded_ori=self.recorded_ori.transpose()
-                self.recorded_joint=self.recorded_joint.transpose()
-                self.recorded_gripper=self.recorded_gripper.transpose()
-                
-                self.training_traj=np.concatenate((self.training_traj,self.recorded_traj ), axis=0)
-                self.training_ori=np.concatenate((self.training_ori,self.recorded_ori), axis=0)
-                self.training_gripper=np.concatenate((self.training_gripper,self.recorded_gripper), axis=0)
-
-                delta_x=resample(self.recorded_traj, step=2)
-                self.training_delta=np.concatenate((self.training_delta,delta_x), axis=0)
-                self.training_dK=np.concatenate((self.training_dK,np.zeros(np.shape(self.recorded_traj))), axis=0)
             print("Demo Saved")
         else:
             print("Demo Discarded")
@@ -275,7 +248,9 @@ class ILoSA(Panda):
         
         pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
         rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
-        self.set_stiffness(pos_stiff, rot_stiff, null_stiff)
+        self.set_stiffness(pos_stiff, rot_stiff, self.null_stiff) #diagonal stiffness
+        self.set_stiffness_ori(self.training_stiff_ori[index_max_k_star,:]) #rotation of the stiffness matrix
+
 
     def Interactive_Control(self):
         print("Press e to stop.")
@@ -292,7 +267,6 @@ class ILoSA(Panda):
                 else:
                     self.null_stiff=self.K_null      
                 self.set_configuration(self.equilibrium_configuration[0])
-                null_stiff = [self.null_stiff]
 
             self.r.sleep()
 

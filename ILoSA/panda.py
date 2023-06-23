@@ -113,6 +113,7 @@ class Panda():
                                           queue_size=0)
         self.stop_pub = rospy.Publisher("/franka_gripper/stop/goal", StopActionGoal,
                                           queue_size=0)
+        self.stiff_ori_pub = rospy.Publisher('/stiffness_rotation', PoseStamped, queue_size=0)
         
     def set_stiffness(self,pos_stiff,rot_stiff,null_stiff):
         stiff_des = Float32MultiArray()
@@ -135,6 +136,28 @@ class Panda():
         
 
         self.goal_pub.publish(goal)
+
+    def set_stiffness_ori(self,quat):
+
+        goal = PoseStamped()
+        goal.header.seq = 1
+        goal.header.stamp = rospy.Time.now()
+        goal.header.frame_id = "map"
+        goal.pose.position.x = 0.0
+        goal.pose.position.y = 0.0
+        goal.pose.position.z = 0.0
+
+        goal.pose.orientation.w = quat[0]
+        goal.pose.orientation.x = quat[1]
+        goal.pose.orientation.y = quat[2]
+        goal.pose.orientation.z = quat[3]
+        
+
+        self.stiff_ori_pub.publish(goal)
+
+    def visualize_stiffness_ellipsoid(self,quat,stiff):
+        return    
+
 
     def set_configuration(self,joint):
         joint_des=Float32MultiArray()
@@ -237,16 +260,16 @@ class Panda():
 
         print("Recording started. Press e to stop.")
 
-        self.recorded_traj = self.cart_pos
-        self.recorded_ori  = self.cart_ori
-        self.recorded_joint= self.joint_pos
-        self.recorded_gripper= self.gripper_pos
+        self.recorded_traj = self.cart_pos.reshape(1,3)
+        self.recorded_ori  = self.cart_ori.reshape(1,4)
+        self.recorded_joint= self.joint_pos.reshape(1,7)
+        self.recorded_gripper= self.gripper_pos.reshape(1,1)
         while not self.end:
 
-            self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
-            self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
-            self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
-            self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
+            self.recorded_traj = np.vstack([self.recorded_traj, self.cart_pos])
+            self.recorded_ori  = np.vstack([self.recorded_ori,  self.cart_ori])
+            self.recorded_joint = np.vstack([self.recorded_joint, self.joint_pos])
+            self.recorded_gripper = np.vstack([self.recorded_gripper, self.gripper_pos])
 
             r.sleep()
         
