@@ -15,6 +15,7 @@ from sensor_msgs.msg import JointState, Joy
 from geometry_msgs.msg import Point, WrenchStamped, PoseStamped, Vector3
 from franka_gripper.msg import GraspActionGoal, HomingActionGoal, StopActionGoal, MoveActionGoal
 from std_msgs.msg import Float32MultiArray
+from visualization_msgs.msg import Marker
 from sys import exit
 
 from pynput.keyboard import Listener, KeyCode
@@ -113,7 +114,8 @@ class Panda():
         self.stop_pub = rospy.Publisher("/franka_gripper/stop/goal", StopActionGoal,
                                           queue_size=0)
         self.stiff_ori_pub = rospy.Publisher('/stiffness_rotation', PoseStamped, queue_size=0)
-        
+        self.ellipse_pub = rospy.Publisher('/stiffness_ellipsoid', Marker, queue_size=0)
+
     def set_stiffness(self,pos_stiff,rot_stiff,null_stiff):
         stiff_des = Float32MultiArray()
         stiff_des.data = np.array([pos_stiff[0], pos_stiff[1], pos_stiff[2], rot_stiff[0], rot_stiff[1], rot_stiff[2], null_stiff[0]]).astype(np.float32)
@@ -154,8 +156,30 @@ class Panda():
 
         self.stiff_ori_pub.publish(goal)
 
-    def visualize_stiffness_ellipsoid(self,quat,stiff):
-        return    
+    def visualize_stiffness_ellipsoid(self,stiff, quat):
+            marker = Marker()
+            marker.header.frame_id = "panda_hand"
+            marker.type = Marker.SPHERE
+            marker.action = Marker.ADD
+            stiff=stiff/1000
+            marker.scale = Vector3(stiff[0], stiff[1], stiff[2])  # Dimensions of the ellipsoid
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+            marker.color.a = 0.8
+
+            # Set the position and orientation of the ellipsoid
+            marker.pose.position.x = 0.0
+            marker.pose.position.y = 0.0
+            marker.pose.position.z = 0.0
+            marker.pose.orientation.x = quat[1]
+            marker.pose.orientation.y = quat[2]
+            marker.pose.orientation.z = quat[3]
+            marker.pose.orientation.w = quat[0]
+
+
+            # Publish the marker
+            self.ellipse_pub.publish(marker)    
 
 
     def set_configuration(self,joint):

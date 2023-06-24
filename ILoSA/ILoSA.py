@@ -252,6 +252,7 @@ class ILoSA(Panda):
         rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
         self.set_stiffness(pos_stiff, rot_stiff, self.self.null_stiff) #diagonal stiffness
         self.set_stiffness_ori(self.training_stiff_ori[index_max_k_star,:]) #rotation of the stiffness matrix
+        self.visualize_stiffness_ellipsoid(pos_stiff,self.training_stiff_ori[index_max_k_star,:])
 
 
     def Interactive_Control(self):
