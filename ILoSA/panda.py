@@ -17,6 +17,9 @@ from sensor_msgs.msg import JointState, Joy
 from geometry_msgs.msg import Point, WrenchStamped, PoseStamped, Vector3
 from franka_gripper.msg import GraspActionGoal, HomingActionGoal, StopActionGoal, MoveActionGoal
 from std_msgs.msg import Float32MultiArray
+from visualization_msgs.msg import Marker
+from sys import exit
+
 
 class Panda():
     def __init__(self):
@@ -117,6 +120,8 @@ class Panda():
         self.move_pub           = rospy.Publisher("/franka_gripper/move/goal", MoveActionGoal, queue_size=0)
         self.homing_pub         = rospy.Publisher("/franka_gripper/homing/goal", HomingActionGoal,queue_size=0)
         self.stop_pub           = rospy.Publisher("/franka_gripper/stop/goal", StopActionGoal, queue_size=0)
+        self.stiff_ori_pub = rospy.Publisher('/stiffness_rotation', PoseStamped, queue_size=0)
+        self.ellipse_pub = rospy.Publisher('/stiffness_ellipsoid', Marker, queue_size=0)
         
     def set_stiffness(self,pos_stiff,rot_stiff,null_stiff):
         stiff_des = Float32MultiArray()
@@ -138,6 +143,50 @@ class Panda():
         goal.pose.orientation.z = quat[3]
         
         self.goal_pub.publish(goal)
+
+    def set_stiffness_ori(self,quat):
+
+        goal = PoseStamped()
+        goal.header.seq = 1
+        goal.header.stamp = rospy.Time.now()
+        goal.header.frame_id = "map"
+        goal.pose.position.x = 0.0
+        goal.pose.position.y = 0.0
+        goal.pose.position.z = 0.0
+
+        goal.pose.orientation.w = quat[0]
+        goal.pose.orientation.x = quat[1]
+        goal.pose.orientation.y = quat[2]
+        goal.pose.orientation.z = quat[3]
+        
+
+        self.stiff_ori_pub.publish(goal)
+
+    def visualize_stiffness_ellipsoid(self,stiff, quat):
+            marker = Marker()
+            marker.header.frame_id = "panda_hand"
+            marker.type = Marker.SPHERE
+            marker.action = Marker.ADD
+            stiff=stiff/1000
+            marker.scale = Vector3(stiff[0], stiff[1], stiff[2])  # Dimensions of the ellipsoid
+            marker.color.r = 1.0
+            marker.color.g = 0.0
+            marker.color.b = 0.0
+            marker.color.a = 0.8
+
+            # Set the position and orientation of the ellipsoid
+            marker.pose.position.x = 0.0
+            marker.pose.position.y = 0.0
+            marker.pose.position.z = 0.0
+            marker.pose.orientation.x = quat[1]
+            marker.pose.orientation.y = quat[2]
+            marker.pose.orientation.z = quat[3]
+            marker.pose.orientation.w = quat[0]
+
+
+            # Publish the marker
+            self.ellipse_pub.publish(marker)    
+
 
     def set_configuration(self,joint):
         joint_des=Float32MultiArray()
@@ -240,19 +289,18 @@ class Panda():
         while vel < trigger:
             vel = math.sqrt((self.cart_pos[0]-init_pos[0])**2 + (self.cart_pos[1]-init_pos[1])**2 + (self.cart_pos[2]-init_pos[2])**2)
 
-        # TODO: The initial pose is added twice, this shouldbe be init with an empty array. I tries but it broke ILoSA, I will leave as it is and ignore. 
-        self.recorded_traj = self.cart_pos
-        self.recorded_ori  = self.cart_ori
-        self.recorded_joint= self.joint_pos
-        self.recorded_gripper = self.gripper_pos
+        self.recorded_traj = self.cart_pos.reshape(1,3)
+        self.recorded_ori  = self.cart_ori.reshape(1,4)
+        self.recorded_joint= self.joint_pos.reshape(1,7)
+        self.recorded_gripper= self.gripper_pos.reshape(1,1)
         
         # gets user imput using keyboard or gui
         self.end_demo_user_input()
         while not self.end:
-            self.recorded_traj = np.c_[self.recorded_traj, self.cart_pos]
-            self.recorded_ori  = np.c_[self.recorded_ori,  self.cart_ori]
-            self.recorded_joint = np.c_[self.recorded_joint, self.joint_pos]
-            self.recorded_gripper = np.c_[self.recorded_gripper, self.gripper_pos]
+            self.recorded_traj = np.vstack([self.recorded_traj, self.cart_pos])
+            self.recorded_ori  = np.vstack([self.recorded_ori,  self.cart_ori])
+            self.recorded_joint = np.vstack([self.recorded_joint, self.joint_pos])
+            self.recorded_gripper = np.vstack([self.recorded_gripper, self.gripper_pos])
             self.r_rec.sleep()
         print('Kinesthetic Demo ended')
         return
