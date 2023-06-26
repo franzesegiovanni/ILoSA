@@ -50,11 +50,11 @@ class Panda():
 
     # joint angle subscriber
     def joint_callback(self, data):
-        self.joint_pos = data.position[0:7]
+        self.joint_pos = np.array(data.position[0:7])
 
     # gripper state subscriber
     def gripper_callback(self, data):
-        self.gripper_pos = data.position[7]+data.position[8]
+        self.gripper_pos = np.array(data.position[7]+data.position[8])
 
     # spacemouse joystick subscriber
     def teleop_callback(self, data):
