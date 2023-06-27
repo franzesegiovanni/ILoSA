@@ -16,11 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
 )
 
-catkin_package()
+catkin_package(
+    CATKIN_DEPENDS sigma
+    )
 
 catkin_python_setup()
 catkin_install_python(PROGRAMS
-    #ILoSA/ILoSA.py
-    #ILoSA/panda.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
