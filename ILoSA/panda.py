@@ -167,7 +167,8 @@ class Panda():
             marker.header.frame_id = "panda_hand"
             marker.type = Marker.SPHERE
             marker.action = Marker.ADD
-            stiff=stiff/1000
+            # stiff=stiff/1000
+            stiff = [x / 1000 for x in stiff]
             marker.scale = Vector3(stiff[0], stiff[1], stiff[2])  # Dimensions of the ellipsoid
             marker.color.r = 1.0
             marker.color.g = 0.0
