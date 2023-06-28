@@ -237,15 +237,10 @@ class ILoSA(Panda):
 
         # GP prediction K stiffness
         [self.dK, _, _]=self.Stiffness.predict(cart_pos, return_std=False)
-
         self.delta = np.clip(self.delta[0], -self.attractor_lim, self.attractor_lim)
-  
         self.dK = np.clip(self.dK[0], self.dK_min, self.dK_max)
-
         dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(cart_pos)
-
-        self.f_stable=-self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
-            
+        self.f_stable = -self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
         self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
 
 
@@ -284,7 +279,7 @@ class ILoSA(Panda):
 
         pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
         rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
-        self.set_stiffness(pos_stiff, rot_stiff, self.self.null_stiff) #diagonal stiffness
+        self.set_stiffness(pos_stiff, rot_stiff, self.null_stiff) #diagonal stiffness
         self.set_stiffness_ori(self.training_stiff_ori[index_max_k_star,:]) #rotation of the stiffness matrix
         self.visualize_stiffness_ellipsoid(pos_stiff,self.training_stiff_ori[index_max_k_star,:])
 
