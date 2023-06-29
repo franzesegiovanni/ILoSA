@@ -116,18 +116,12 @@ class ILoSA(Panda):
             print("Demo Discarded")
 
     def clear_training_data(self, **kwargs):
-        # should del() these variables here instead of leaving it to the garbage collector
-        #del(self.training_traj) 
-        #del(self.training_ori) 
-        #del(self.training_delta)
-        #del(self.training_dK)
-        #del(self.training_gripper)
-
         self.training_traj = []
         self.training_ori  = []
         self.training_delta = []
         self.training_dK = []
         self.training_gripper = []
+        self.training_stiff_ori = []
 
     def save(self, **kwargs):
         file_name = 'last' # default value
@@ -144,15 +138,17 @@ class ILoSA(Panda):
             print('creating folder: %s'%folder)
             folder.mkdir(parents=True, exist_ok=True) 
         
-        np.savez(file_path.as_posix(), 
-        nullspace_traj = self.nullspace_traj, 
-        nullspace_joints = self.nullspace_joints, 
-        training_traj = self.training_traj,
-        training_ori = self.training_ori,
-        training_delta = self.training_delta,
-        training_gripper = self.training_gripper,
-        training_dK = self.training_dK)
-
+        np.savez(file_path.as_posix(),
+                nullspace_traj = self.nullspace_traj, 
+                nullspace_joints = self.nullspace_joints, 
+                training_traj = self.training_traj,
+                training_ori = self.training_ori,
+                training_delta = self.training_delta,
+                training_gripper = self.training_gripper,
+                training_dK = self.training_dK,
+                training_stiff_ori = self.training_stiff_ori
+                )
+        
     def load(self, **kwargs):
         file_name = 'last' # default value
         if 'model_name' in kwargs:
@@ -175,13 +171,17 @@ class ILoSA(Panda):
         self.training_ori = data['training_ori']
         self.training_delta = data['training_delta']
         self.training_dK = data['training_dK']
-        self.training_gripper = data['training_gripper'] 
-        self.nullspace_traj = self.nullspace_traj
-        self.nullspace_joints = self.nullspace_joints
-        self.training_traj = self.training_traj
-        self.training_ori = self.training_ori
-        self.training_delta = self.training_delta
-        self.training_dK = self.training_dK
+        self.training_gripper = data['training_gripper']
+        self.training_stiff_ori = data['training_stiff_ori']
+        
+        # TODO: What is this?
+        #self.nullspace_traj = self.nullspace_traj
+        #self.nullspace_joints = self.nullspace_joints
+        #self.training_traj = self.training_traj
+        #self.training_ori = self.training_ori
+        #self.training_delta = self.training_delta
+        #self.training_dK = self.training_dK
+        #self.training_stiff_ori = self.training_stiff_ori
 
     def Train_GPs(self, **kwargs):
         if len(self.training_traj)>0 and len(self.training_delta)>0:
