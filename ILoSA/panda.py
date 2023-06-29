@@ -78,7 +78,7 @@ class Panda():
             self.grasp_command.goal.width = 1
             self.grasp_pub.publish(self.grasp_command)
 
-    def home_gripper(self):
+    def home_gripper(self, **kwargs):
         self.homing_pub.publish(self.home_command)
 
     def stop_gripper(self):
@@ -195,7 +195,11 @@ class Panda():
         self.configuration_pub.publish(joint_des)
 
 
-    def go_to_pose(self, goal_pose):
+    def go_to_pose(self, **kwargs):
+        if 'goal_pose' in kwargs:
+            goal_pose = kwargs['goal_pose']
+        else:
+            raise NameError('\'goal_pose\' parameter not set.')
 
         r=rospy.Rate(100)
         # the goal pose should be of type PoseStamped. E.g. goal_pose=PoseStampled()

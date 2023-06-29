@@ -57,7 +57,7 @@ class ILoSA(Panda):
         self.r_rec=rospy.Rate(self.rec_freq)
         self.r_control=rospy.Rate(self.control_freq)
 
-    def Record_NullSpace(self):
+    def Record_NullSpace(self, **kwargs):
         self.Kinesthetic_Demonstration()
         print('Recording ended.')
         # get user imput from keyboard or GUI 
@@ -75,11 +75,22 @@ class ILoSA(Panda):
         else:
             print("Demo Discarded")
 
-    def Record_Demonstration(self):
+    def Record_Demonstration(self, **kwargs):
+        query_user = True # default value
+        # get the user defined value if passed to the function
+        if 'query_user' in kwargs:
+            query_user = kwargs['query_user']
+
         self.Kinesthetic_Demonstration()
         print('Recording ended.')
         # get user imput from keyboard or GUI 
-        save_demo = self.save_demo_user_input() 
+
+        # If we are using multiple sequences, we just want to save the data
+        if query_user:
+            save_demo = self.save_demo_user_input() 
+        else:
+            save_demo = 'y'
+
         if save_demo.lower()=='y':
             if len(self.training_traj)==0:
                 self.training_traj=np.empty((0,3))
@@ -104,7 +115,7 @@ class ILoSA(Panda):
         else:
             print("Demo Discarded")
 
-    def clear_training_data(self):
+    def clear_training_data(self, **kwargs):
         # should del() these variables here instead of leaving it to the garbage collector
         #del(self.training_traj) 
         #del(self.training_ori) 
@@ -118,7 +129,13 @@ class ILoSA(Panda):
         self.training_dK = []
         self.training_gripper = []
 
-    def save(self, file_name='last'):
+    def save(self, **kwargs):
+        file_name = 'last' # default value
+        if 'model_name' in kwargs:
+            file_name = kwargs['model_name']
+        else:
+            raise NameError('\'model_name\' parameter not set.')
+
         folder = pathlib.Path().resolve() / 'data'
         file_path = folder / (file_name + '.npz') 
        
@@ -136,7 +153,13 @@ class ILoSA(Panda):
         training_gripper = self.training_gripper,
         training_dK = self.training_dK)
 
-    def load(self, file_name='last'):
+    def load(self, **kwargs):
+        file_name = 'last' # default value
+        if 'model_name' in kwargs:
+            file_name = kwargs['model_name']
+        else:
+            raise NameError('\'model_name\' parameter not set.')
+
         file_path = pathlib.Path().resolve() / 'data' / (file_name + '.npz') 
         
         # Check if the file exists 
@@ -160,7 +183,7 @@ class ILoSA(Panda):
         self.training_delta = self.training_delta
         self.training_dK = self.training_dK
 
-    def Train_GPs(self):
+    def Train_GPs(self, **kwargs):
         if len(self.training_traj)>0 and len(self.training_delta)>0:
             print("Training of Delta")
             kernel = C(constant_value = 0.01, constant_value_bounds=[0.0005, self.attractor_lim]) * RBF(length_scale=[0.1, 0.1, 0.1], length_scale_bounds=[0.025, 0.2]) + WhiteKernel(0.00025, [0.0001, 0.0005]) 
@@ -186,7 +209,13 @@ class ILoSA(Panda):
         else: 
             print('No Null Space Control Policy Learned')    
     
-    def save_models(self, model_name):
+    def save_models(self, **kwargs):
+        file_name = 'last' # default value
+        if 'model_name' in kwargs:
+            model_name = kwargs['model_name']
+        else:
+            raise NameError('\'model_name\' parameter not set.')
+
         folder = pathlib.Path('./models/'+model_name)
         
         # Check if the folder exists and create it if not
@@ -202,7 +231,13 @@ class ILoSA(Panda):
             with open(folder/'nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
 
-    def load_models(self, model_name):
+    def load_models(self, **kwargs):
+        file_name = 'last' # default value
+        if 'model_name' in kwargs:
+            model_name = kwargs['model_name']
+        else:
+            raise NameError('\'model_name\' parameter not set.')
+
         try:
             with open('models/'+model_name+'/delta.pkl', 'rb') as delta:
                 self.Delta = pickle.load(delta)
@@ -219,7 +254,7 @@ class ILoSA(Panda):
         except:
             print("No NullSpace model saved")
     
-    def find_alpha(self):
+    def find_alpha(self, **kwargs):
         alpha=np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
             pos = self.Delta.X[i,:]+self.Delta.length_scales 
@@ -228,7 +263,7 @@ class ILoSA(Panda):
             self.alpha=np.min(alpha)
 
         
-    def step(self):
+    def step(self, **kwargs):
         # read the actual position of the robot
         
         cart_pos=np.array(self.cart_pos).reshape(1,-1)
@@ -284,7 +319,7 @@ class ILoSA(Panda):
         self.visualize_stiffness_ellipsoid(pos_stiff,self.training_stiff_ori[index_max_k_star,:])
 
     
-    def Interactive_Control(self):
+    def Interactive_Control(self, **kwargs):
         print("Press e to stop.")
         self.end_demo_user_input()
 
