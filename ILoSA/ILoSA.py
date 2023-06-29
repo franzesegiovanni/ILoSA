@@ -255,13 +255,12 @@ class ILoSA(Panda):
             print("No NullSpace model saved")
     
     def find_alpha(self, **kwargs):
-        alpha=np.zeros(len(self.Delta.X))
+        alpha = np.zeros(len(self.Delta.X))
         for i in range(len(self.Delta.X)):         
             pos = self.Delta.X[i,:]+self.Delta.length_scales 
-            dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(pos.reshape(1,-1))                                                                                                                                                                
-            alpha[i]=self.max_grad_force/ np.sqrt(dSigma_dx**2+dSigma_dy**2+dSigma_dz**2)
-            self.alpha=np.min(alpha)
-
+            dSigma_dx, dSigma_dy, dSigma_dz = self.Delta.var_gradient(pos.reshape(1,-1))
+            alpha[i] = self.max_grad_force/ np.sqrt(dSigma_dx**2+dSigma_dy**2+dSigma_dz**2)
+            self.alpha = np.min(alpha)
         
     def step(self, **kwargs):
         # read the actual position of the robot
@@ -301,7 +300,8 @@ class ILoSA(Panda):
         x_new = cart_pos[0][0] + self.delta[0]
         y_new = cart_pos[0][1] + self.delta[1]
         z_new = cart_pos[0][2] + self.delta[2]
-            
+        
+        # TODO: ask Gio why are we doing this like this?
         quat_goal=self.training_ori[index_max_k_star,:]
         gripper_goal=self.training_gripper[index_max_k_star,0]
 
