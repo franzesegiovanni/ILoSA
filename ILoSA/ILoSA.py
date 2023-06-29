@@ -156,11 +156,10 @@ class ILoSA(Panda):
         else:
             raise NameError('\'model_name\' parameter not set.')
 
-        file_path = pathlib.Path().resolve() / 'data' / (file_name + '.npz') 
-        
-        # Check if the file exists 
+        file_path = pathlib.Path().resolve() / 'data' / (file_name + '.npz')
+        # Check if the file exists
         if not file_path.exists():
-            print('File %s does noe exists. Doing nothing.'%file_path)
+            print('File %s does not exists. Doing nothing.'%file_path)
             return
 
         data = np.load(str(pathlib.Path().resolve())+'/data/'+str(file_name)+'.npz')
@@ -210,7 +209,6 @@ class ILoSA(Panda):
             print('No Null Space Control Policy Learned')    
     
     def save_models(self, **kwargs):
-        file_name = 'last' # default value
         if 'model_name' in kwargs:
             model_name = kwargs['model_name']
         else:
@@ -232,7 +230,6 @@ class ILoSA(Panda):
                 pickle.dump(self.NullSpaceControl,nullspace)
 
     def load_models(self, **kwargs):
-        file_name = 'last' # default value
         if 'model_name' in kwargs:
             model_name = kwargs['model_name']
         else:
