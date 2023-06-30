@@ -250,7 +250,7 @@ class ILoSA(Panda):
         
         pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
         rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
-        self.set_stiffness(pos_stiff, rot_stiff, self.self.null_stiff) #diagonal stiffness
+        self.set_stiffness(pos_stiff, rot_stiff, self.null_stiff) #diagonal stiffness
         self.set_stiffness_ori(self.training_stiff_ori[index_max_k_star,:]) #rotation of the stiffness matrix
         self.visualize_stiffness_ellipsoid(pos_stiff,self.training_stiff_ori[index_max_k_star,:])
 
