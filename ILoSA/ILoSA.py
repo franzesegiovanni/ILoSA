@@ -48,7 +48,8 @@ class ILoSA(Panda):
         self.training_gripper = []
         self.nullspace_traj = []
         self.nullspace_joints = []
-        
+        self.training_stiff_ori = []
+
         # maximum force of the gradient
         self.max_grad_force = 20
 
@@ -92,6 +93,7 @@ class ILoSA(Panda):
             save_demo = 'y'
 
         if save_demo.lower()=='y':
+            print('saving demo')
             if len(self.training_traj)==0:
                 self.training_traj=np.empty((0,3))
                 self.training_delta=np.empty((0,3))
@@ -173,7 +175,7 @@ class ILoSA(Panda):
         self.training_gripper = data['training_gripper']
         self.training_stiff_ori = data['training_stiff_ori']
         
-        # TODO: What is this?
+        # TODO: repeated?
         #self.nullspace_traj = self.nullspace_traj
         #self.nullspace_joints = self.nullspace_joints
         #self.training_traj = self.training_traj
@@ -212,7 +214,7 @@ class ILoSA(Panda):
         if 'model_name' in kwargs:
             model_name = kwargs['model_name']
         else:
-            raise NameError('\'model_name\' parameter not set.')
+            raise KeyError('\'model_name\' parameter not set.')
 
         folder = pathlib.Path('./models/'+model_name)
         
@@ -298,7 +300,6 @@ class ILoSA(Panda):
         y_new = cart_pos[0][1] + self.delta[1]
         z_new = cart_pos[0][2] + self.delta[2]
         
-        # TODO: ask Gio why are we doing this like this?
         quat_goal=self.training_ori[index_max_k_star,:]
         gripper_goal=self.training_gripper[index_max_k_star,0]
 
