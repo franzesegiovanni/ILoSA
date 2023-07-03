@@ -23,40 +23,41 @@ class ILoSA(Panda):
 
         # stiffness parameters
         self.K_min = 0.0
-        self.K_max = 2000.0
-        self.K_mean = 600
+        self.K_max = 300.0
+        self.K_mean = 100
         self.dK_min = 0.0
         self.dK_max = self.K_max-self.K_mean
         self.K_null=5
         self.null_stiff=[0.0]
         # maximum attractor distance along each axis
         self.attractor_lim = 0.04
-        self.scaling_factor=1
-        self.scaling_factor_ns=1
+        self.scaling_factor = 1
+        self.scaling_factor_ns = 1
         # user-provided teleoperation input
         self.feedback = [0, 0, 0]
         # uncertainty threshold at which new points are added
         self.theta = 0.4
         # uncertainty threshold at which stiffness is automatically reduced
         self.theta_stiffness = 0.99
-        self.theta_nullspace= 0
+        self.theta_nullspace = 0
+        
         # training data initialisation
-        self.training_traj = []
-        self.training_ori = []
-        self.training_delta = []
-        self.training_dK = []
-        self.training_gripper = []
-        self.nullspace_traj = []
-        self.nullspace_joints = []
-        self.training_stiff_ori = []
+        self.training_traj = np.empty((0,3))
+        self.training_ori = np.empty((0,4))
+        self.training_delta = np.empty((0,3))
+        self.training_dK = np.empty((0,3))
+        self.training_gripper = np.empty((0,1))
+        self.nullspace_traj = np.empty((0,3))
+        self.nullspace_joints = np.empty((0,7))
+        self.training_stiff_ori = np.empty((0, 4))
 
         # maximum force of the gradient
         self.max_grad_force = 20
 
-        self.NullSpaceControl=None
+        self.NullSpaceControl = None
 
-        self.r_rec=rospy.Rate(self.rec_freq)
-        self.r_control=rospy.Rate(self.control_freq)
+        self.r_rec = rospy.Rate(self.rec_freq)
+        self.r_control = rospy.Rate(self.control_freq)
 
     def Record_NullSpace(self, **kwargs):
         self.Kinesthetic_Demonstration()
@@ -66,11 +67,8 @@ class ILoSA(Panda):
         print('save demo: ', save_demo)
         
         if save_demo.lower()=='y':
-            if len(self.nullspace_traj)==0:
-                self.nullspace_traj=np.empty((1,3))
-                self.nullspace_joints=np.empty((1,7))
-            self.nullspace_traj=np.vstack([self.nullspace_traj,self.recorded_traj])
-            self.nullspace_joints=np.vstack([self.nullspace_joints,self.recorded_joint])
+            self.nullspace_traj = np.vstack([self.nullspace_traj,self.recorded_traj])
+            self.nullspace_joints = np.vstack([self.nullspace_joints,self.recorded_joint])
 
             print("Demo Saved")
         else:
@@ -92,38 +90,34 @@ class ILoSA(Panda):
         else:
             save_demo = 'y'
 
-        if save_demo.lower()=='y':
+        if save_demo.lower() == 'y':
             print('saving demo')
-            if len(self.training_traj)==0:
-                self.training_traj=np.empty((0,3))
-                self.training_delta=np.empty((0,3))
-                self.training_dK=np.empty((0,3))
-                self.training_ori=np.empty((0,4))
-                self.training_gripper=np.empty((0,1))
+            
+            self.training_traj = np.vstack([self.training_traj,self.recorded_traj])
+            self.training_ori = np.vstack([self.training_ori,self.recorded_ori])
+            self.training_gripper = np.vstack([self.training_gripper,self.recorded_gripper])
 
-            self.training_traj=np.vstack([self.training_traj,self.recorded_traj])
-            self.training_ori=np.vstack([self.training_ori,self.recorded_ori])
-            self.training_gripper=np.vstack([self.training_gripper,self.recorded_gripper])
+            self.training_stiff_ori = np.zeros_like(self.training_ori)
+            self.training_stiff_ori[:,0] = 1
 
-            self.training_stiff_ori=np.zeros_like(self.training_ori)
-            self.training_stiff_ori[:,0]=1
+            delta_x = resample(self.recorded_traj, step=2)
+            self.training_delta = np.vstack([self.training_delta,delta_x])
 
-            delta_x=resample(self.recorded_traj, step=2)
-            self.training_delta=np.vstack([self.training_delta,delta_x])
-
-            self.training_dK=np.vstack([self.training_dK,np.zeros(np.shape(self.recorded_traj))])
+            self.training_dK = np.vstack([self.training_dK,np.zeros(np.shape(self.recorded_traj))])
                 
             print("Demo Saved")
         else:
             print("Demo Discarded")
 
     def clear_training_data(self, **kwargs):
-        self.training_traj = []
-        self.training_ori  = []
-        self.training_delta = []
-        self.training_dK = []
-        self.training_gripper = []
-        self.training_stiff_ori = []
+        self.training_traj=np.empty((0,3))
+        self.training_ori=np.empty((0,4))
+        self.training_delta=np.empty((0,3))
+        self.training_dK=np.empty((0,3))
+        self.training_gripper=np.empty((0,1))
+        self.nullspace_traj=np.empty((0,3))
+        self.nullspace_joints=np.empty((0,7))
+        self.training_stiff_ori = np.empty((0, 4))
 
     def save(self, **kwargs):
         file_name = 'last' # default value
@@ -175,15 +169,6 @@ class ILoSA(Panda):
         self.training_gripper = data['training_gripper']
         self.training_stiff_ori = data['training_stiff_ori']
         
-        # TODO: repeated?
-        #self.nullspace_traj = self.nullspace_traj
-        #self.nullspace_joints = self.nullspace_joints
-        #self.training_traj = self.training_traj
-        #self.training_ori = self.training_ori
-        #self.training_delta = self.training_delta
-        #self.training_dK = self.training_dK
-        #self.training_stiff_ori = self.training_stiff_ori
-
     def Train_GPs(self, **kwargs):
         if len(self.training_traj)>0 and len(self.training_delta)>0:
             print("Training of Delta")
@@ -225,8 +210,10 @@ class ILoSA(Panda):
 
         with open(folder/'delta.pkl','wb') as delta:
             pickle.dump(self.Delta,delta)
+        
         with open(folder/'stiffness.pkl','wb') as stiffness:
             pickle.dump(self.Stiffness,stiffness)
+
         if self.NullSpaceControl:
             with open(folder/'nullspace.pkl','wb') as nullspace:
                 pickle.dump(self.NullSpaceControl,nullspace)
@@ -242,11 +229,13 @@ class ILoSA(Panda):
                 self.Delta = pickle.load(delta)
         except:
             print("No delta model saved")
+
         try:
             with open('models/'+model_name+'/stiffness.pkl', 'rb') as stiffness:
                 self.Stiffness = pickle.load(stiffness)
         except:
             print("No stiffness model saved")
+        
         try:
             with open('models/'+model_name+'/nullspace.pkl', 'rb') as nullspace:
                 self.NullSpace = pickle.load(nullspace)
@@ -263,8 +252,8 @@ class ILoSA(Panda):
         
     def step(self, **kwargs):
         # read the actual position of the robot
-        
         cart_pos=np.array(self.cart_pos).reshape(1,-1)
+        
         # GP predictions Delta_x
         [self.delta, self.sigma, index_max_k_star]=self.Delta.predict(cart_pos)
 
@@ -276,36 +265,32 @@ class ILoSA(Panda):
         self.f_stable = -self.alpha*np.array([dSigma_dx, dSigma_dy, dSigma_dz])
         self.K_tot = np.clip(np.add(self.dK, self.K_mean), self.K_min, self.K_max)
 
-
         if any(np.abs(np.array(self.feedback)) > 0.05): # this avoids to activate the feedback on noise joystick
             print("Received Feedback")
             delta_inc, dK_inc = Interpret_3D(feedback=self.feedback, delta=self.delta, K=self.K_tot, delta_lim=self.attractor_lim, K_mean=self.K_mean)
-            print('delta_inc')
-            print(delta_inc)
-            print("dK_inc")
-            print(dK_inc)
+            print('delta_inc: ', delta_inc)
+            print("dK_inc", dK_inc)
             is_uncertain=self.Delta.is_uncertain(theta=self.theta)
             self.Delta.update_with_k(x=cart_pos, mu=self.delta, epsilon_mu=delta_inc, is_uncertain=is_uncertain)
             self.Stiffness.update_with_k(x=cart_pos, mu=self.dK, epsilon_mu=dK_inc, is_uncertain=is_uncertain)
 
-        
         self.delta, self.K_tot = Force2Impedance(self.delta, self.K_tot, self.f_stable, self.attractor_lim)
-        self.K_tot=[self.K_tot]
-        K_ori_scaling=self.K_ori
+        self.K_tot = [self.K_tot]
+        K_ori_scaling = self.K_ori
         self.scaling_factor = (1- self.sigma / self.Delta.max_var) / (1 - self.theta_stiffness)
         if self.sigma / self.Delta.max_var > self.theta_stiffness: 
-            self.K_tot=self.K_tot*self.scaling_factor
-            K_ori_scaling= self.K_ori*self.scaling_factor
+            self.K_tot = self.K_tot*self.scaling_factor
+            K_ori_scaling = self.K_ori*self.scaling_factor
         x_new = cart_pos[0][0] + self.delta[0]
         y_new = cart_pos[0][1] + self.delta[1]
         z_new = cart_pos[0][2] + self.delta[2]
         
-        quat_goal=self.training_ori[index_max_k_star,:]
-        gripper_goal=self.training_gripper[index_max_k_star,0]
+        quat_goal = self.training_ori[index_max_k_star,:]
+        gripper_goal = self.training_gripper[index_max_k_star,0]
 
-        quat_goal=slerp_sat(self.cart_ori, quat_goal, 0.1)
+        quat_goal = slerp_sat(self.cart_ori, quat_goal, 0.1)
 
-        pos_goal=[x_new, y_new, z_new]
+        pos_goal = [x_new, y_new, z_new]
         self.set_attractor(pos_goal,quat_goal)
         self.move_gripper(gripper_goal)
         #self.grasp_gripper(gripper_goal)
@@ -315,12 +300,15 @@ class ILoSA(Panda):
         self.set_stiffness(pos_stiff, rot_stiff, self.null_stiff) #diagonal stiffness
         self.set_stiffness_ori(self.training_stiff_ori[index_max_k_star,:]) #rotation of the stiffness matrix
         self.visualize_stiffness_ellipsoid(pos_stiff,self.training_stiff_ori[index_max_k_star,:])
+        return pos_goal 
 
-    
     def Interactive_Control(self, **kwargs):
         print("Press e to stop.")
         self.end_demo_user_input()
-
+       
+        # TODO: ask Gio about this
+        # start with current pose as goal 
+        pos_goal = np.array(self.cart_pos).reshape(1,-1)
         while not self.end:
             if self.NullSpaceControl:
                 [self.equilibrium_configuration, self.sigma_null_space]=self.NullSpaceControl.predict(np.array(pos_goal).reshape(1,-1))
@@ -331,9 +319,8 @@ class ILoSA(Panda):
                 else:
                     self.null_stiff=self.K_null      
                 self.set_configuration(self.equilibrium_configuration[0])
-
-            self.step()    
-
+            # update for the next iteration
+            pos_goal = self.step()    
             self.r_control.sleep()
 
 if __name__ == '__main__':

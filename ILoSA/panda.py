@@ -145,7 +145,6 @@ class Panda():
         self.goal_pub.publish(goal)
 
     def set_stiffness_ori(self,quat):
-
         goal = PoseStamped()
         goal.header.seq = 1
         goal.header.stamp = rospy.Time.now()
@@ -158,7 +157,6 @@ class Panda():
         goal.pose.orientation.x = quat[1]
         goal.pose.orientation.y = quat[2]
         goal.pose.orientation.z = quat[3]
-        
 
         self.stiff_ori_pub.publish(goal)
 
