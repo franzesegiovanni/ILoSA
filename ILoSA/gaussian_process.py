@@ -39,6 +39,12 @@ class InteractiveGP():
 
         self.K_inv = np.linalg.inv(K_)
 
+    def upadate_model(self, X, Y):
+        self.X=X
+        self.Y=Y
+        K_ = self.kernel_(self.X, self.X) + (self.noise_var_ * np.eye(len(self.X)))
+        self.K_inv = np.linalg.inv(K_)
+        
     def predict(self, x, return_std=True):
         k_star = self.kernel_(self.X, x).reshape(-1, 1)
         k_star_K_inv_ = np.matmul(np.transpose(k_star), self.K_inv)
