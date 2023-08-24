@@ -195,6 +195,14 @@ class ILoSA(Panda):
         else: 
             print('No Null Space Control Policy Learned')    
     
+    def update_GPs(self):
+        if len(self.training_traj)>0 and len(self.training_delta)>0:
+            self.Delta.upadate_model(X=self.training_traj, Y=self.training_delta)
+            self.Stiffness.upadate_model(X=self.training_traj, Y=self.training_dK)
+
+        if len(self.nullspace_traj)>0 and len(self.nullspace_joints)>0:
+            self.NullSpaceControl.upadate_model(X=self.nullspace_traj, Y=self.nullspace_joints)
+
     def save_models(self, **kwargs):
         if 'model_name' in kwargs:
             model_name = kwargs['model_name']
@@ -292,8 +300,8 @@ class ILoSA(Panda):
 
         pos_goal = [x_new, y_new, z_new]
         self.set_attractor(pos_goal,quat_goal)
-        self.move_gripper(gripper_goal)
-        #self.grasp_gripper(gripper_goal)
+        #self.move_gripper(gripper_goal)
+        self.grasp_gripper(gripper_goal)
 
         pos_stiff = [self.K_tot[0][0],self.K_tot[0][1],self.K_tot[0][2]]
         rot_stiff = [K_ori_scaling,K_ori_scaling,K_ori_scaling]
