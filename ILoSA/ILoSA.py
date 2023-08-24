@@ -195,10 +195,10 @@ class ILoSA(Panda):
         else: 
             print('No Null Space Control Policy Learned')    
     
-    def update_GPs(self):
+    def update_GPs(self, **kwargs):
         if len(self.training_traj)>0 and len(self.training_delta)>0:
-            self.Delta.upadate_model(X=self.training_traj, Y=self.training_delta)
-            self.Stiffness.upadate_model(X=self.training_traj, Y=self.training_dK)
+            self.Delta.update_model(X=self.training_traj, Y=self.training_delta)
+            self.Stiffness.update_model(X=self.training_traj, Y=self.training_dK)
 
         if len(self.nullspace_traj)>0 and len(self.nullspace_joints)>0:
             self.NullSpaceControl.upadate_model(X=self.nullspace_traj, Y=self.nullspace_joints)

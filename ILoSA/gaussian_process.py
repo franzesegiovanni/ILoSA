@@ -29,7 +29,7 @@ class InteractiveGP():
         self.K_inv = np.linalg.inv(K_)
         return
 
-    def upadate_model(self, X, Y):
+    def update_model(self, X, Y):
         self.X=X
         self.Y=Y
         K_ = self.kernel_(self.X, self.X) + (self.noise_var_ * np.eye(len(self.X)))
