@@ -20,6 +20,7 @@ ILoSA has shown to be effective in different challenging tasks, such as pushing 
 
 With this we invite you all to try ILoSA out for yourselves, to expand it to other tasks challenging not only for robots but maybe even humans as well and keep pushing the capabilities of robot learning further.
 
+![Cleaning task](.gif/cleaning_bot.gif)
 
 # How to run the code on a Franka Emika Panda
 To install:
