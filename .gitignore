@@ -1,2 +1,10 @@
-*.pyc
+# vim
+*.swp
 
+# python
+*.pyc
+*/__pycache__/*
+example/.ipynb_checkpoints/Gaussian Process Dynamical System -checkpoint.ipynb
+ILoSA.egg-info/
+build/
+models/

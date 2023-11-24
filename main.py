@@ -5,45 +5,65 @@ Cognitive Robotics, TU Delft
 This code is part of TERI (TEaching Robots Interactively) project
 """
 #%%
-from ILoSA import ILoSA
-import time
+# Stuff from the ILoSA package
+from ILoSA.ILoSA import ILoSA
+from ILoSA.user_interfaces import KBUI # keyboard user interface
+
+# ROS stff
 from geometry_msgs.msg import PoseStamped
 import rospy
+
+# Put together the user interface and ILoSA
+class My_ILoSA(ILoSA, KBUI):
+    def __init__(self):
+        super(My_ILoSA, self).__init__()
 #%%
+
 if __name__ == '__main__':
     rospy.init_node('ILoSA', anonymous=True)
-    ILoSA=ILoSA()
+    ILoSA=My_ILoSA()
     ILoSA.connect_ROS()
-    time.sleep(5)
+    rospy.sleep(5)
     ILoSA.home_gripper()
     #%% 
     print("Recording of Nullspace contraints")
     ILoSA.Record_NullSpace()
-    #%%     
-    time.sleep(1)
-    print("Reset to the starting cartesian position")
-    ILoSA.go_to_pose(ILoSA.nullspace_traj[:, 0])    
     #%%
-    time.sleep(1)
+    rospy.sleep(1)
     print("Record of the cartesian trajectory")
     ILoSA.Record_Demonstration()     
-
+    
+    #%% 
+    rospy.sleep(1)
+    print("Reset to the starting cartesian position")
+    pose = ILoSA.training_traj[0]
+    ori = ILoSA.training_ori[0]
+    p = PoseStamped()
+    p.pose.position.x = pose[0]
+    p.pose.position.y = pose[1]
+    p.pose.position.z = pose[2]
+    p.pose.orientation.w = ori[0]
+    p.pose.orientation.x = ori[1]
+    p.pose.orientation.y = ori[2]
+    p.pose.orientation.z = ori[3]    
+    ILoSA.go_to_pose(p)    
+    
     #%%
-    time.sleep(1)
+    rospy.sleep(1)
     print("Save the data") 
     ILoSA.save()
     #%%
-    time.sleep(1)
+    rospy.sleep(1)
     print("Load the data") 
     ILoSA.load()    
     #%% 
-    time.sleep(1)
+    rospy.sleep(1)
     print("Train the Gaussian Process Models")
     ILoSA.Train_GPs()
     ILoSA.save_models()
     ILoSA.find_alpha()
     #%%
-    time.sleep(1)
+    rospy.sleep(1)
     print("Reset to the starting cartesian position")
     start = PoseStamped()
     ILoSA.home_gripper()
@@ -58,8 +78,8 @@ if __name__ == '__main__':
     start.pose.orientation.z = ILoSA.training_ori[0,3] 
     ILoSA.go_to_pose(start)
     #%% 
-    time.sleep(1)
+    rospy.sleep(1)
     print("Interactive Control Starting")
     ILoSA.Interactive_Control(verboose=False)
 
-# %%
+    # %%

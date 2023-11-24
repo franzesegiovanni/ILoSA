@@ -10,36 +10,26 @@ import scipy
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel as C
 
-
 class InteractiveGP():
     def __init__(self, X, Y, kernel, y_lim, alpha=1e-10, n_restarts_optimizer=10, optimizer="fmin_l_bfgs_b"):
         self.y_lim=y_lim
         self.X=X
-        print("Shape X for gaussian Process")
-        print(np.shape(self.X))
+        print("Shape X for gaussian Process: ", np.shape(self.X))
         self.Y=Y
-        print("Shape Y for gaussian Process")
-        print(np.shape(self.Y))
+        print("Shape Y for gaussian Process: ", np.shape(self.Y))
         self.gp = GaussianProcessRegressor(kernel=kernel, alpha=alpha, optimizer=optimizer, n_restarts_optimizer=n_restarts_optimizer)
-
     
     def fit(self):
-
         gp_ = self.gp.fit(self.X, self.Y)
-
         self.kernel_ = gp_.kernel_
-
         self.length_scales=self.kernel_.get_params()['k1__k2__length_scale']
-
         self.noise_var_ = gp_.alpha + self.kernel_.get_params()['k2__noise_level']
-
         self.max_var   = self.kernel_.get_params()['k1__k1__constant_value']+ self.noise_var_
-
         K_ = self.kernel_(self.X, self.X) + (self.noise_var_ * np.eye(len(self.X)))
-
         self.K_inv = np.linalg.inv(K_)
+        return
 
-    def upadate_model(self, X, Y):
+    def update_model(self, X, Y):
         self.X=X
         self.Y=Y
         K_ = self.kernel_(self.X, self.X) + (self.noise_var_ * np.eye(len(self.X)))
@@ -140,4 +130,3 @@ class InteractiveGP():
     def is_uncertain(self,theta):
         uncertain = (self.sigma - self.noise_var_)/(self.max_var - self.noise_var_) > theta
         return uncertain
-

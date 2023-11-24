@@ -8,7 +8,6 @@ This code is part of TERI (TEaching Robots Interactively) project
 import rospy
 import math
 import numpy as np
-import time
 import scipy
 from std_msgs.msg import Float32MultiArray
 from scipy.spatial.transform import Rotation
