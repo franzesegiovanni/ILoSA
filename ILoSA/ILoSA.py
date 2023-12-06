@@ -6,7 +6,6 @@ This code is part of TERI (TEaching Robots Interactively) project
 """
 #!/usr/bin/env python
 import numpy as np
-import pandas as pd
 from ILoSA.gaussian_process import *
 from ILoSA.panda import *
 from ILoSA.utils import *

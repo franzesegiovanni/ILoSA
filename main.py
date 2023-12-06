@@ -15,7 +15,7 @@ if __name__ == '__main__':
     ILoSA=ILoSA()
     ILoSA.connect_ROS()
     time.sleep(5)
-    ILoSA.home_gripper()
+    # ILoSA.home_gripper()
     #%% 
     print("Recording of Nullspace contraints")
     ILoSA.Record_NullSpace()
@@ -60,6 +60,6 @@ if __name__ == '__main__':
     #%% 
     time.sleep(1)
     print("Interactive Control Starting")
-    ILoSA.Interactive_Control(verboose=False)
+    ILoSA.Interactive_Control()
 
 # %%
