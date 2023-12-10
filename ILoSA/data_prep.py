@@ -60,14 +60,11 @@ def slerp_sat(q1, q2, theta_max_perc):
     q1=q1/np.sqrt(np.sum(q1**2))
     q2=q2/np.sqrt(np.sum(q2**2))
     inner=np.inner(q1,q2)
-    # if inner<0:
-    #     q2=-q2
+    if inner<0:
+        q2=-q2
     theta= np.arccos(np.abs(inner)) 
     q_slerp=np.copy(q2)
-    # print("Theta",theta)
     if theta>theta_max:
-        #print('out_of_bounds')
-        #if 
         q_slerp[0]=(np.sin(theta-theta_max)*q1[0]+np.sin(theta_max)*q2[0])/np.sin(theta)
         q_slerp[1]=(np.sin(theta-theta_max)*q1[1]+np.sin(theta_max)*q2[1])/np.sin(theta)
         q_slerp[2]=(np.sin(theta-theta_max)*q1[2]+np.sin(theta_max)*q2[2])/np.sin(theta)
