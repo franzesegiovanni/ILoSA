@@ -17,7 +17,7 @@ from std_msgs.msg import Float32MultiArray
 from visualization_msgs.msg import Marker
 from sys import exit
 
-from pynput.keyboard import Listener, KeyCode
+from pynput.keyboard import Listener, Key
 
 class Panda():
 
@@ -47,7 +47,7 @@ class Panda():
 
     def _on_press(self, key):
         # This function runs on the background and checks if a keyboard key was pressed
-        if key == KeyCode.from_char('e'):
+        if key == Key.esc:
             self.end = True
 
     def ee_pose_callback(self, data):
@@ -282,7 +282,7 @@ class Panda():
         while vel < trigger:
             vel = math.sqrt((self.cart_pos[0]-init_pos[0])**2 + (self.cart_pos[1]-init_pos[1])**2 + (self.cart_pos[2]-init_pos[2])**2)
 
-        print("Recording started. Press e to stop.")
+        print("Recording started. Press Esc to stop.")
 
         self.recorded_traj = self.cart_pos.reshape(1,3)
         self.recorded_ori  = self.cart_ori.reshape(1,4)
