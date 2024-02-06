@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ILoSA</name>
+  <version>0.0.2</version>
+  <description>Interanctive Learning of Stiffness and Attractors</description>
+
+  <maintainer email="g.franzese@tudelft.nl">Giovanni Franzese</maintainer>
+
+  <license>MIT License</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
+
+
+
+
+
+
