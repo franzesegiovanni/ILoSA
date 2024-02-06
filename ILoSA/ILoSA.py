@@ -95,6 +95,21 @@ class ILoSA(Panda):
             print("Demo Saved")
         else:
             print("Demo Discarded")
+    
+    def go_to_start(self):
+        print("Reset to the starting cartesian position")
+        start = PoseStamped()
+        self.home_gripper()
+
+        start.pose.position.x = self.training_traj[0,0]
+        start.pose.position.y = self.training_traj[0,1]
+        start.pose.position.z = self.training_traj[0,2]
+        
+        start.pose.orientation.w = self.training_ori[0,0] 
+        start.pose.orientation.x = self.training_ori[0,1] 
+        start.pose.orientation.y = self.training_ori[0,2] 
+        start.pose.orientation.z = self.training_ori[0,3] 
+        self.go_to_pose(start)
 
     def Clear_Training_Data(self):
         self.training_traj = []
@@ -127,9 +142,7 @@ class ILoSA(Panda):
         self.nullspace_traj=self.nullspace_traj
         self.nullspace_joints=  self.nullspace_joints
         self.training_traj=self.training_traj
-        # print(np.shape(self.training_traj))
         self.training_ori=self.training_ori
-        # print(np.shape(self.training_ori))
         self.training_delta=self.training_delta
         self.training_dK=self.training_dK
 
@@ -263,7 +276,7 @@ class ILoSA(Panda):
 
 
     def Interactive_Control(self):
-        print("Press e to stop.")
+        print("Press Esc to stop.")
         self.end=False
         while not self.end:            
             if self.NullSpaceControl:

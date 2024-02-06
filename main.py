@@ -7,7 +7,6 @@ This code is part of TERI (TEaching Robots Interactively) project
 #%%
 from ILoSA import ILoSA
 import time
-from geometry_msgs.msg import PoseStamped
 import rospy
 #%%
 if __name__ == '__main__':
@@ -44,22 +43,8 @@ if __name__ == '__main__':
     ILoSA.find_alpha()
     #%%
     time.sleep(1)
-    print("Reset to the starting cartesian position")
-    start = PoseStamped()
-    ILoSA.home_gripper()
-
-    start.pose.position.x = ILoSA.training_traj[0,0]
-    start.pose.position.y = ILoSA.training_traj[0,1]
-    start.pose.position.z = ILoSA.training_traj[0,2]
-    
-    start.pose.orientation.w = ILoSA.training_ori[0,0] 
-    start.pose.orientation.x = ILoSA.training_ori[0,1] 
-    start.pose.orientation.y = ILoSA.training_ori[0,2] 
-    start.pose.orientation.z = ILoSA.training_ori[0,3] 
-    ILoSA.go_to_pose(start)
+    ILoSA.go_to_start()
     #%% 
     time.sleep(1)
     print("Interactive Control Starting")
     ILoSA.Interactive_Control()
-
-# %%
